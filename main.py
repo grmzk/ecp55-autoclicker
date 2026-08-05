@@ -1,4 +1,6 @@
+from datetime import datetime
 from os import getenv
+from time import sleep
 
 from dotenv import load_dotenv
 from selene import be, browser
@@ -30,6 +32,7 @@ def wait_for_loading():
 def login(username: str, password: str):
     browser.element("input[id='promed-login']").type(username)
     browser.element("input[id='promed-password']").type(password)
+    sleep(1)
     browser.element("button[id='auth_submit']").click()
     wait_for_loading()
 
@@ -51,15 +54,101 @@ def set_ecp_date():
     wait_for_loading()
 
 
+class CaseOfDisease:
+    def __init__(self, element_row: Element) -> None:
+        self.element_row = element_row
+        self.incoming_date = datetime.strptime(
+            (
+                element_row.element("div[class*='x-grid3-col-12']")
+                .locate()
+                .get_attribute("innerText")
+                or ""
+            ).strip(),
+            "%d.%m.%Y %H:%M",
+        )
+        self.patient = (
+            element_row.element("div[class*='x-grid3-col-13']")
+            .locate()
+            .get_attribute("innerText")
+            or ""
+        ).strip()
+        self.patient_birthday = datetime.strptime(
+            (
+                element_row.element("div[class*='x-grid3-col-14']")
+                .locate()
+                .get_attribute("innerText")
+                or ""
+            ).strip(),
+            "%d.%m.%Y",
+        )
+        self.department = (
+            element_row.element("div[class*='x-grid3-col-23']")
+            .locate()
+            .get_attribute("innerText")
+            or ""
+        ).strip()
+        self.diagnosis = (
+            element_row.element("div[class*='x-grid3-col-autoexpand']")
+            .locate()
+            .get_attribute("innerText")
+            or ""
+        ).strip()
+        self.doctor = (
+            element_row.element("div[class*='x-grid3-col-66']")
+            .locate()
+            .get_attribute("innerText")
+            or ""
+        ).strip()
+        self.social_status = (
+            element_row.element("div[class*='x-grid3-col-68']")
+            .locate()
+            .get_attribute("innerText")
+            or ""
+        ).strip()
+        outpatient_card_number_str = (
+            element_row.element("div[class*='x-grid3-col-10']")
+            .locate()
+            .get_attribute("innerText")
+            or None
+        )
+        self.outpatient_card_number = (
+            int(outpatient_card_number_str)
+            if outpatient_card_number_str
+            else None
+        )
+
+
 def get_outpatient_list():
-    element = browser.element("div[id$='gp-groupField-2']")
-    element.wait.for_(be.visible)
+    rows = browser.element("div[id$='gp-groupField-4-bd']").all("tr")
+    print(len(rows))
+    case_of_disease_list = list()
+    for element_row in rows:
+        case_of_disease_list.append(CaseOfDisease(element_row))
+    for case_of_disease in case_of_disease_list:
+        print(
+            case_of_disease.incoming_date,
+            " : ",
+            case_of_disease.patient,
+            " : ",
+            case_of_disease.patient_birthday,
+            " : ",
+            case_of_disease.department,
+            " : ",
+            case_of_disease.diagnosis,
+            " : ",
+            case_of_disease.doctor,
+            " : ",
+            case_of_disease.social_status,
+            " : ",
+            case_of_disease.outpatient_card_number,
+        )
+    case_of_disease_list[0].element_row.click()
 
 
 def main():
     browser.config.base_url = "https://ecp55.is-mis.ru"
     browser.config.window_width = 1920
-    browser.config.window_height = 1000
+    browser.config.window_height = 900
     browser.config.timeout = 60
     driver_options = webdriver.ChromeOptions()
     # driver_options.add_argument("--headless")
