@@ -1,0 +1,2 @@
+python-dotenv>=1.2.2,<2.0.0
+selene>=2.0.0rc10,<3.0.0
