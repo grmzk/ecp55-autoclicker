@@ -3,7 +3,7 @@ from os import getenv
 from time import sleep
 
 from dotenv import load_dotenv
-from selene import be, browser
+from selene import be, browser, have
 from selene.core.entity import Element
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -56,7 +56,6 @@ def set_ecp_date():
 
 class CaseOfDisease:
     def __init__(self, element_row: Element) -> None:
-        self.element_row = element_row
         self.incoming_date = datetime.strptime(
             (
                 element_row.element("div[class*='x-grid3-col-12']")
@@ -117,11 +116,18 @@ class CaseOfDisease:
             else None
         )
 
+    def click(self):
+        browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
+            have.text(self.patient).and_(
+                have.text(self.incoming_date.strftime("%d.%m.%Y %H:%M"))
+            )
+        ).click().click()
+
 
 def get_outpatient_list():
     rows = browser.element("div[id$='gp-groupField-4-bd']").all("tr")
-    print(len(rows))
-    case_of_disease_list = list()
+    print("Outpatient amount: " + str(len(rows)))
+    case_of_disease_list: list[CaseOfDisease] = []
     for element_row in rows:
         case_of_disease_list.append(CaseOfDisease(element_row))
     for case_of_disease in case_of_disease_list:
@@ -142,7 +148,12 @@ def get_outpatient_list():
             " : ",
             case_of_disease.outpatient_card_number,
         )
-    case_of_disease_list[0].element_row.click()
+    case_of_disease_list[0].click()
+    # case_of_disease_list[0].element_row.click().click()
+    # patient = case_of_disease_list[0].patient
+    # browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
+    #     have.text(patient)
+    # ).click().click()
 
 
 def main():
