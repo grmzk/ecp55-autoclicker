@@ -123,6 +123,25 @@ class CaseOfDisease:
             )
         ).click().click()
 
+    def add_outpatient_card(self):
+        self.click()
+        browser.element("button[id='ext-gen742']").click()
+
+    def select_outpatient_card_doctor(self):
+        self.add_outpatient_card()
+        browser.element(
+            "div[class*='x-grid3-col-autoexpand_vizit']"
+        ).click().double_click()
+        wait_for_loading()
+        wait_for_loading()
+
+    def select_outpatient_card_visit_code(self):
+        self.select_outpatient_card_doctor()
+        browser.element("img[id='ext-gen6682']").click()
+        # browser.element("div[id='ext-gen4964']").all("td").element_by(
+        #     have.text("B01.050.001")
+        # ).click()
+
 
 def get_outpatient_list():
     rows = browser.element("div[id$='gp-groupField-4-bd']").all("tr")
@@ -148,7 +167,7 @@ def get_outpatient_list():
             " : ",
             case_of_disease.outpatient_card_number,
         )
-    case_of_disease_list[0].click()
+    case_of_disease_list[3].select_outpatient_card_visit_code()
     # case_of_disease_list[0].element_row.click().click()
     # patient = case_of_disease_list[0].patient
     # browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
