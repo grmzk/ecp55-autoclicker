@@ -49,7 +49,7 @@ def get_user_fullname():
 def set_ecp_date():
     element = browser.element("input[id='ext-comp-1118']")
     element.wait.for_(be.existing)
-    send_keys_one_by_one(element, Keys.BACKSPACE * 8 + "02082026")
+    send_keys_one_by_one(element, Keys.BACKSPACE * 8 + "08082026")
     element.press_enter()
     wait_for_loading()
 
@@ -126,6 +126,9 @@ class CaseOfDisease:
     def add_outpatient_card(self):
         self.click()
         browser.element("button[id='ext-gen742']").click()
+        browser.all("span[class='x-window-dlg']").element_by(
+            have.text("Продолжить сохранение?")
+        )
 
     def select_outpatient_card_doctor(self):
         self.add_outpatient_card()
@@ -167,7 +170,7 @@ def get_outpatient_list():
             " : ",
             case_of_disease.outpatient_card_number,
         )
-    case_of_disease_list[3].select_outpatient_card_visit_code()
+    case_of_disease_list[0].add_outpatient_card()
     # case_of_disease_list[0].element_row.click().click()
     # patient = case_of_disease_list[0].patient
     # browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
