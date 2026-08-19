@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from selene import be, browser, have
 from selene.core.entity import Element
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from gemini import get_mkb_codes
@@ -21,7 +20,7 @@ credentials = {
 }
 
 
-trauma_type = {
+trauma_type_to_ecp = {
     "производственная": 5,
     "производственная, ДТП": 3,
     "производственная, кататравма": 5,
@@ -32,7 +31,7 @@ trauma_type = {
     "бытовая, насильственная": 6,
 }
 
-qinpatients_result_to_ecp = {
+result_to_ecp = {
     ResultStatus.UNCOMPLETED: 0,
     ResultStatus.DISCHARGED: 99,
     ResultStatus.TRANSFER_INTERNAL: 99,
@@ -47,7 +46,7 @@ qinpatients_result_to_ecp = {
     ResultStatus.DISCHARGED_UNKNOWN_RESULT: 99,
 }
 
-department_to_code = {
+department_to_ecp = {
     "Отделение травматологии": 45010010,
     "Отделение нейрохирургии": 45010036,
     "Хирургическое отделение": 45010006,
@@ -63,7 +62,7 @@ department_to_code = {
     "Кардиологическое отделение №2": 45010099,
 }
 
-qinpatients_condition_to_ecp = {
+condition_to_ecp = {
     "удовлетворительное": 1,
     "средней тяжести": 2,
     "тяжелое": 3,
@@ -84,7 +83,9 @@ def wait_for_loading():
         element = browser.element("div[class$='x-mask-loading']")
         element.wait.for_(be.existing)
         element.wait.for_(be.not_.existing)
-    except NoSuchElementException:
+    # except TimeoutException:
+    #     pass
+    except Exception:
         pass
     # print("Loading completed.    ")
 
@@ -106,14 +107,38 @@ def get_user_fullname():
     return header_text.rsplit("(", maxsplit=1)[-1].split(")")[0].strip()
 
 
-def set_ecp_date(date: datetime.date):
+def set_ecp_date(examination_date: datetime.date):
     element = browser.element(
         "input[matomo_event_id='win_swMPWorkPlacePriemWindow_tbr_swdatefield']"
     )
-    element.wait.for_(be.existing)
-    send_keys_one_by_one(element, Keys.BACKSPACE * 8 + date.strftime("%d%m%Y"))
+    element.wait.for_(be.present)
+    send_keys_one_by_one(
+        element, Keys.BACKSPACE * 8 + examination_date.strftime("%d%m%Y")
+    )
     element.press_enter()
     wait_for_loading()
+    try:
+        date_error_dlg = True
+        browser.element(".x-window-dlg").with_(timeout=1).wait.for_(be.present)
+    # except TimeoutException:
+    #     date_error_dlg = False
+    #     print("TimeoutException called!")
+    # except NoSuchElementException:
+    #     date_error_dlg = False
+    #     print("NoSuchElementException called!")
+    except Exception:
+        # print(type(e).__name__)
+        date_error_dlg = False
+    if date_error_dlg:
+        browser.element(".x-window-dlg button").click()
+    if element.locate().get_attribute("value") != examination_date.strftime(
+        "%d.%m.%Y"
+    ):
+        send_keys_one_by_one(
+            element, Keys.BACKSPACE * 8 + examination_date.strftime("%d%m%Y")
+        )
+        element.press_enter()
+        wait_for_loading()
 
 
 def set_workplace():
@@ -256,7 +281,7 @@ class CaseDisease:
                 f"Ошибка: для пациента {self.patient_fullname} "
                 "отсутствуют данные из БД QInPatients."
             )
-        type_number = trauma_type[self.qinpatients.trauma_type]
+        type_number = trauma_type_to_ecp[self.qinpatients.trauma_type]
         browser.element("#PrehospTrauma_id + input").click().type(
             str(type_number)
         )
@@ -274,10 +299,8 @@ class CaseDisease:
                 f"Ошибка: для пациента {self.patient_fullname} "
                 "отсутствуют данные из БД QInPatients."
             )
-        result_status = qinpatients_result_to_ecp.get(
-            self.qinpatients.result_status
-        )
-        department_code = department_to_code.get(self.qinpatients.department)
+        result_status = result_to_ecp.get(self.qinpatients.result_status)
+        department_code = department_to_ecp.get(self.qinpatients.department)
         browser.element("#EPSPEF_PriemLeavePanel").click()
         if result_status == 99:  # hospitalization
             browser.element("#EPSPEF_LpuSectionCombo").click().type(
@@ -294,7 +317,7 @@ class CaseDisease:
                     .strip()
                     .lower()
                 )
-                condition_code = qinpatients_condition_to_ecp.get(condition, 1)
+                condition_code = condition_to_ecp.get(condition, 1)
             browser.element("#DiagSetPhase_pid + input").click().type(
                 str(condition_code)
             )
@@ -312,10 +335,24 @@ class CaseDisease:
         send_keys_one_by_one(
             date_element, Keys.BACKSPACE * 8 + result_date.strftime("%d%m%Y")
         )
+        if date_element.locate().get_attribute(
+            "value"
+        ) != result_date.strftime("%d.%m.%Y"):
+            send_keys_one_by_one(
+                date_element,
+                Keys.BACKSPACE * 8 + result_date.strftime("%d%m%Y"),
+            )
         time_element = browser.element("input[name='EvnPS_OutcomeTime']")
         send_keys_one_by_one(
             time_element, Keys.BACKSPACE * 4 + result_date.strftime("%H%M")
         )
+        if time_element.locate().get_attribute(
+            "value"
+        ) != result_date.strftime("%H:%M"):
+            send_keys_one_by_one(
+                date_element,
+                Keys.BACKSPACE * 4 + result_date.strftime("%H%M"),
+            )
 
     def save_result(self):
         browser.element(

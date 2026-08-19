@@ -9,7 +9,7 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 load_dotenv()
 
 PG_HOST = os.getenv("PG_HOST")
-PG_PORT = int(os.getenv("PG_PORT"))
+PG_PORT = int(os.getenv("PG_PORT", 8080))
 PG_DATABASE = os.getenv("POSTGRES_DB")
 PG_USER = os.getenv("POSTGRES_USER")
 PG_PASSWORD = os.getenv("POSTGRES_PASSWORD")
