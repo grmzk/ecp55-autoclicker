@@ -1,0 +1,2 @@
+class EcpAutoclickerException(Exception):
+    pass
