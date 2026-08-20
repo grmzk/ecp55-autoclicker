@@ -7,6 +7,8 @@ from selenium.webdriver.common.keys import Keys
 from case_disease import CaseDisease
 from utils import send_keys_one_by_one, wait_for_loading
 
+SET_DATE_ERROR_DLG_TIMEOUT = 1
+
 
 def login(username: str, password: str):
     browser.element("input[id='promed-login']").type(username)
@@ -37,7 +39,9 @@ def set_ecp_date(examination_date: datetime.date):
     wait_for_loading()
     try:
         date_error_dlg = True
-        browser.element(".x-window-dlg").with_(timeout=1).wait.for_(be.present)
+        browser.element(".x-window-dlg").with_(
+            timeout=SET_DATE_ERROR_DLG_TIMEOUT
+        ).wait.for_(be.present)
     # except TimeoutException:
     #     date_error_dlg = False
     #     print("TimeoutException called!")
