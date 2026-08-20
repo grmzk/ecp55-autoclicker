@@ -13,6 +13,8 @@ from gemini import get_mkb_codes
 
 load_dotenv()
 
+GLOBAL_BROWSER_TIMEOUT = 60
+
 credentials = {
     "username": getenv("USERNAME", ""),
     "password": getenv("PASSWORD", ""),
@@ -23,7 +25,7 @@ def main():
     browser.config.base_url = "https://ecp55.is-mis.ru"
     browser.config.window_width = 1920
     browser.config.window_height = 900
-    browser.config.timeout = 60
+    browser.config.timeout = GLOBAL_BROWSER_TIMEOUT
     driver_options = webdriver.ChromeOptions()
     # driver_options.add_argument("--headless")
     driver_options.add_argument("--start-maximized")
@@ -72,8 +74,8 @@ def main():
             }
         )
 
-    input("Press Enter to exit...")
-    return
+    # input("Press Enter to exit...")
+    # return
 
     code_list = get_mkb_codes(anamnesis_diagnosis_list)
     # code_list = [

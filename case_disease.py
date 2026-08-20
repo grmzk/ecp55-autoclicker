@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from selene import browser, have
+from selene import be, browser, have
 from selene.core.entity import Element
 from selenium.webdriver.common.keys import Keys
 
@@ -14,6 +14,16 @@ from convert_to_ecp import (
 from exceptions import EcpAutoclickerException
 from qinpatients import Examination
 from utils import send_keys_one_by_one, wait_for_loading
+
+SET_RESULT_CODE_LIST_TIMEOUT = 5
+
+DEFAULT_REASON_CODE = "X59.9"
+DEFAULT_DIAGNOSIS_CODE = "T14.9"
+DEFAULT_DIAGNOSIS_BRUISE_CODE = "T14.0"
+DEFAULT_DIAGNOSIS_WOUND_CODE = "T14.1"
+DEFAULT_DIAGNOSIS_FRACTURE_CODE = "T14.2"
+DEFAULT_DIAGNOSIS_DISLOCATED_CODE = "T14.3"
+DEFAULT_DIAGNOSIS_AMPUTATION_CODE = "T14.7"
 
 
 class CaseDisease:
@@ -134,8 +144,39 @@ class CaseDisease:
         browser.element("div.x-combo-selected + div").click()
 
     def set_result_diagnosis_code(self):
+        if not self.qinpatients:
+            raise EcpAutoclickerException(
+                f"Ошибка: для пациента {self.patient_fullname} "
+                "отсутствуют данные из БД QInPatients."
+            )
         diagnosis_code = self.diagnosis_code
         browser.element("#EPSPEF_DiagRecepCombo").click().type(diagnosis_code)
+        try:
+            browser.element(
+                "div.x-combo-list[style*='visibility: visible']"
+            ).with_(timeout=SET_RESULT_CODE_LIST_TIMEOUT).wait.for_(be.present)
+        except Exception:
+            if (
+                "ампутаци" in self.qinpatients.diagnosis.lower()
+                or "размозжен" in self.qinpatients.diagnosis.lower()
+            ):
+                diagnosis_code = DEFAULT_DIAGNOSIS_AMPUTATION_CODE
+            elif "перелом" in self.qinpatients.diagnosis.lower():
+                diagnosis_code = DEFAULT_DIAGNOSIS_FRACTURE_CODE
+            if (
+                "вывих" in self.qinpatients.diagnosis.lower()
+                or "растяжение" in self.qinpatients.diagnosis.lower()
+            ):
+                diagnosis_code = DEFAULT_DIAGNOSIS_DISLOCATED_CODE
+            elif "рана" in self.qinpatients.diagnosis.lower():
+                diagnosis_code = DEFAULT_DIAGNOSIS_WOUND_CODE
+            elif "ушиб" in self.qinpatients.diagnosis.lower():
+                diagnosis_code = DEFAULT_DIAGNOSIS_BRUISE_CODE
+            else:
+                diagnosis_code = DEFAULT_DIAGNOSIS_CODE
+            browser.element("#EPSPEF_DiagRecepCombo + input").click().type(
+                diagnosis_code
+            )
         browser.element(
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
         ).click()
@@ -154,6 +195,14 @@ class CaseDisease:
     def set_result_reason_code(self):
         reason_code = self.reason_code
         browser.element("#Diag_eid + input").click().type(reason_code)
+        try:
+            browser.element(
+                "div.x-combo-list[style*='visibility: visible']"
+            ).with_(timeout=SET_RESULT_CODE_LIST_TIMEOUT).wait.for_(be.present)
+        except Exception:
+            browser.element("#Diag_eid + input").click().type(
+                DEFAULT_REASON_CODE
+            )
         browser.element(
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
         ).click()

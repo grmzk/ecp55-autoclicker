@@ -9,9 +9,10 @@ max-line-length = 79
 
 [tool.pylint.messages_control]
 disable = [
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
+  "missing-module-docstring",
+  "missing-class-docstring",
+  "missing-function-docstring",
+  "broad-exception-caught",     # need to delete for production
 ]
 
 #[tool.pylint.format]
