@@ -24,7 +24,7 @@ class ResultStatus(Enum):
 
 
 @dataclass
-class Examination:
+class Examination:  # pylint: disable=too-many-instance-attributes
     patient_fullname: str
     patient_birthday: datetime.date
     examination_date: datetime.datetime
@@ -109,14 +109,14 @@ class Examination:
             select_query,
             [patient_fullname, patient_birthday],
         )
-        if not response or not len(response):
+        if not response:
             return None
         examinations: list[Examination] = []
         for examination_data in response:
             examinations.append(
                 Examination(
                     *examination_data[:-1],
-                    result_status=ResultStatus(examination_data[-1])
+                    result_status=ResultStatus(examination_data[-1]),
                 )
             )
         for examination in examinations:
