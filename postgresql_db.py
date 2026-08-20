@@ -9,7 +9,7 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 load_dotenv()
 
 PG_HOST = os.getenv("PG_HOST")
-PG_PORT = int(os.getenv("PG_PORT", 8080))
+PG_PORT = int(os.getenv("PG_PORT", "8080"))
 PG_DATABASE = os.getenv("POSTGRES_DB")
 PG_USER = os.getenv("POSTGRES_USER")
 PG_PASSWORD = os.getenv("POSTGRES_PASSWORD")
@@ -25,8 +25,8 @@ def connect_psql():
             password=PG_PASSWORD,
         )
         connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    except Exception as error:
-        logging.error(f"PG CONNECT: {error}")
+    except psycopg2.Error as error:
+        logging.error("PG CONNECT: %s", error)
         return None
     return connection
 
@@ -41,8 +41,8 @@ def pg_select_data(
         cursor = connection.cursor()
         cursor.execute(select_query, vars=variables)
         data = cursor.fetchall()
-    except Exception as error:
-        logging.error(f"PG QUERY: {error}")
+    except psycopg2.Error as error:
+        logging.error("PG QUERY: %s", error)
         return None
     if connection:
         cursor.close()
@@ -59,9 +59,13 @@ def pg_write_data(
     try:
         cursor = connection.cursor()
         cursor.execute(write_query + " RETURNING id", vars=variables)
-        query_id = cursor.fetchone()[0]
-    except Exception as error:
-        logging.error(f"PG QUERY: {error}")
+        result = cursor.fetchone()
+        if result is None:
+            logging.error("PG QUERY: INSERT returned no id")
+            return False
+        query_id = result[0]
+    except psycopg2.Error as error:
+        logging.error("PG QUERY: %s", error)
         return False
     if connection:
         cursor.close()

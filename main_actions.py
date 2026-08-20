@@ -1,10 +1,10 @@
 import datetime
 from time import sleep
 
-from case_disease import CaseDisease
 from selene import be, browser
 from selenium.webdriver.common.keys import Keys
 
+from case_disease import CaseDisease
 from utils import send_keys_one_by_one, wait_for_loading
 
 
