@@ -1,4 +1,4 @@
-from qinpatients import ResultStatus
+from qinpatients.result_status import ResultStatus
 
 trauma_type_to_ecp = {
     "производственная": 5,
@@ -9,6 +9,7 @@ trauma_type_to_ecp = {
     "бытовая, ДТП": 9,
     "бытовая, кататравма": 6,
     "бытовая, насильственная": 6,
+    "заболевание": 0,
 }
 
 result_to_ecp = {

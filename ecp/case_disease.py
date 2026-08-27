@@ -1,19 +1,11 @@
 import datetime
-import re
 
 from selene import be, browser, have
 from selene.core.entity import Element
 from selenium.webdriver.common.keys import Keys
 
-from convert_to_ecp import (
-    condition_to_ecp,
-    department_to_ecp,
-    result_to_ecp,
-    trauma_type_to_ecp,
-)
-from exceptions import EcpAutoclickerException
-from qinpatients import Examination
-from utils import send_keys_one_by_one, wait_for_loading
+from ecp.exceptions import EcpAutoclickerException
+from ecp.utils import send_keys_one_by_one, wait_for_loading
 
 SET_RESULT_CODE_LIST_TIMEOUT = 5
 
@@ -26,9 +18,9 @@ DEFAULT_DIAGNOSIS_DISLOCATED_CODE = "T14.3"
 DEFAULT_DIAGNOSIS_AMPUTATION_CODE = "T14.7"
 
 
-class CaseDisease:
+class CaseDisease:  # pylint: disable=too-many-instance-attributes
     def __init__(self, element_row: Element) -> None:
-        self.incoming_date = datetime.datetime.strptime(
+        self.ecp_incoming_date = datetime.datetime.strptime(
             (
                 element_row.element("div[class*='x-grid3-col-12']")
                 .locate()
@@ -37,13 +29,13 @@ class CaseDisease:
             ).strip(),
             "%d.%m.%Y %H:%M",
         )
-        self.patient_fullname = (
+        self.ecp_patient_fullname = (
             element_row.element("div[class*='x-grid3-col-13']")
             .locate()
             .get_attribute("innerText")
             or ""
         ).strip()
-        self.patient_birthday = datetime.datetime.strptime(
+        self.ecp_patient_birthday = datetime.datetime.strptime(
             (
                 element_row.element("div[class*='x-grid3-col-14']")
                 .locate()
@@ -52,25 +44,25 @@ class CaseDisease:
             ).strip(),
             "%d.%m.%Y",
         )
-        self.department = (
+        self.ecp_department = (
             element_row.element("div[class*='x-grid3-col-23']")
             .locate()
             .get_attribute("innerText")
             or ""
         ).strip()
-        self.diagnosis = (
+        self.ecp_diagnosis = (
             element_row.element("div[class*='x-grid3-col-autoexpand']")
             .locate()
             .get_attribute("innerText")
             or ""
         ).strip()
-        self.doctor = (
+        self.ecp_operator = (
             element_row.element("div[class*='x-grid3-col-66']")
             .locate()
             .get_attribute("innerText")
             or ""
         ).strip()
-        self.social_status = (
+        self.ecp_social_status = (
             element_row.element("div[class*='x-grid3-col-68']")
             .locate()
             .get_attribute("innerText")
@@ -82,28 +74,32 @@ class CaseDisease:
             .get_attribute("innerText")
             or None
         )
-        self.outpatient_card_number = (
+        self.ecp_outpatient_card_number = (
             int(outpatient_card_number_str)
             if outpatient_card_number_str
             else None
         )
-        self.qinpatients = Examination.get_examination(
-            self.patient_fullname, self.patient_birthday, self.incoming_date
-        )
+        self.doctor = ""
+        self.diagnosis = ""
         self.diagnosis_code = ""
         self.reason_code = ""
+        self.anamnesis_morbi = ""
+        self.trauma_type_number = 0
+        self.condition_number = 1
+        self.result_status_number = 0
+        self.inpatient_department_code = 0
 
     def click(self):
         browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
-            have.text(self.patient_fullname).and_(
-                have.text(self.incoming_date.strftime("%d.%m.%Y %H:%M"))
+            have.text(self.ecp_patient_fullname).and_(
+                have.text(self.ecp_incoming_date.strftime("%d.%m.%Y %H:%M"))
             )
         ).click().click()
 
     def double_click(self):
         browser.element("div[id$='gp-groupField-2-bd']").all("tr").element_by(
-            have.text(self.patient_fullname).and_(
-                have.text(self.incoming_date.strftime("%d.%m.%Y %H:%M"))
+            have.text(self.ecp_patient_fullname).and_(
+                have.text(self.ecp_incoming_date.strftime("%d.%m.%Y %H:%M"))
             )
         ).click().click().double_click()
         wait_for_loading()
@@ -131,23 +127,27 @@ class CaseDisease:
         # ).click()
 
     def set_result_doctor(self):
-        if not self.qinpatients:
+        if not self.doctor:
             raise EcpAutoclickerException(
-                f"Ошибка: для пациента {self.patient_fullname} "
-                "отсутствуют данные из БД QInPatients."
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "отсутствуют данные `doctor`."
             )
-        result_doctor = self.qinpatients.doctor
         browser.element("#EPSPEF_AdmitDepartPanel").click()
         browser.element("#EPSPEF_MedStaffFactRecCombo").click().type(
-            result_doctor
+            self.doctor
         )
         browser.element("div.x-combo-selected + div").click()
 
     def set_result_diagnosis_code(self):
-        if not self.qinpatients:
+        if not self.diagnosis_code:
             raise EcpAutoclickerException(
-                f"Ошибка: для пациента {self.patient_fullname} "
-                "отсутствуют данные из БД QInPatients."
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "отсутствуют данные `diagnosis_code`."
+            )
+        if not self.diagnosis:
+            raise EcpAutoclickerException(
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "отсутствуют данные `diagnosis`."
             )
         diagnosis_code = self.diagnosis_code
         browser.element("#EPSPEF_DiagRecepCombo").click().type(diagnosis_code)
@@ -157,20 +157,20 @@ class CaseDisease:
             ).with_(timeout=SET_RESULT_CODE_LIST_TIMEOUT).wait.for_(be.present)
         except Exception:
             if (
-                "ампутаци" in self.qinpatients.diagnosis.lower()
-                or "размозжен" in self.qinpatients.diagnosis.lower()
+                "ампутаци" in self.diagnosis.lower()
+                or "размозжен" in self.diagnosis.lower()
             ):
                 diagnosis_code = DEFAULT_DIAGNOSIS_AMPUTATION_CODE
-            elif "перелом" in self.qinpatients.diagnosis.lower():
+            elif "перелом" in self.diagnosis.lower():
                 diagnosis_code = DEFAULT_DIAGNOSIS_FRACTURE_CODE
-            if (
-                "вывих" in self.qinpatients.diagnosis.lower()
-                or "растяжение" in self.qinpatients.diagnosis.lower()
+            elif (
+                "вывих" in self.diagnosis.lower()
+                or "растяжение" in self.diagnosis.lower()
             ):
                 diagnosis_code = DEFAULT_DIAGNOSIS_DISLOCATED_CODE
-            elif "рана" in self.qinpatients.diagnosis.lower():
+            elif "рана" in self.diagnosis.lower():
                 diagnosis_code = DEFAULT_DIAGNOSIS_WOUND_CODE
-            elif "ушиб" in self.qinpatients.diagnosis.lower():
+            elif "ушиб" in self.diagnosis.lower():
                 diagnosis_code = DEFAULT_DIAGNOSIS_BRUISE_CODE
             else:
                 diagnosis_code = DEFAULT_DIAGNOSIS_CODE
@@ -182,17 +182,16 @@ class CaseDisease:
         ).click()
 
     def set_result_trauma_type(self):
-        if not self.qinpatients:
-            raise EcpAutoclickerException(
-                f"Ошибка: для пациента {self.patient_fullname} "
-                "отсутствуют данные из БД QInPatients."
-            )
-        type_number = trauma_type_to_ecp[self.qinpatients.trauma_type]
+        if not self.trauma_type_number:
+            return
+        # type_number = trauma_type_to_ecp[self.qinpatients.trauma_type]
         browser.element("#PrehospTrauma_id + input").click().type(
-            str(type_number)
+            str(self.trauma_type_number)
         )
 
     def set_result_reason_code(self):
+        if not self.reason_code:
+            return
         reason_code = self.reason_code
         browser.element("#Diag_eid + input").click().type(reason_code)
         try:
@@ -208,43 +207,29 @@ class CaseDisease:
         ).click()
 
     def set_result_status(self):
-        if not self.qinpatients:
+        if not self.result_status_number:
             raise EcpAutoclickerException(
-                f"Ошибка: для пациента {self.patient_fullname} "
-                "отсутствуют данные из БД QInPatients."
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "отсутствуют данные `result_status_number`."
             )
-        result_status = result_to_ecp.get(self.qinpatients.result_status)
-        department_code = department_to_ecp.get(self.qinpatients.department)
         browser.element("#EPSPEF_PriemLeavePanel").click()
-        if result_status == 99:  # hospitalization
+        if self.result_status_number == 99:  # hospitalization
             browser.element("#EPSPEF_LpuSectionCombo").click().type(
-                str(department_code)
+                str(self.inpatient_department_code)
             ).press_enter()
-            condition_code = 1
-            condition_match = re.match(
-                r"^Общее состояние [а-я ]+", self.qinpatients.status_praesens
-            )
-            if condition_match:
-                condition = (
-                    condition_match.group()
-                    .split("Общее состояние ")[-1]
-                    .strip()
-                    .lower()
-                )
-                condition_code = condition_to_ecp.get(condition, 1)
             browser.element("#DiagSetPhase_pid + input").click().type(
-                str(condition_code)
+                str(self.condition_number)
             )
             return
         browser.element("#EPSPEF_PrehospWaifRefuseCause_id").click().type(
-            str(result_status)
+            str(self.result_status_number)
         )
         browser.element("#DiagSetPhase_aid + input").click().type("1")
         browser.element("#DiagSetPhase_pid + input").click().type("1")
         browser.element("#DeseaseType_id + input").click().type("1")
 
     def set_result_date(self):
-        result_date = self.incoming_date + datetime.timedelta(hours=1)
+        result_date = self.ecp_incoming_date + datetime.timedelta(hours=1)
         date_element = browser.element("input[name='EvnPS_OutcomeDate']")
         send_keys_one_by_one(
             date_element, Keys.BACKSPACE * 8 + result_date.strftime("%d%m%Y")

@@ -1,26 +1,11 @@
 import datetime
 from dataclasses import dataclass
-from enum import Enum
 
-from postgresql_db import pg_select_data
+from common.postgresql_db import pg_select_data
+from qinpatients.result_status import ResultStatus
 
 TIMEZONE = 6 * 60 * 60  # UTC+6
 EXAMINATION_DATE_LAG = 2 * 60 * 60  # 2 hour
-
-
-class ResultStatus(Enum):
-    UNCOMPLETED = 0
-    DISCHARGED = 1
-    TRANSFER_INTERNAL = 2
-    TRANSFER_EXTERNAL = 3
-    OUTPATIENT = 4
-    SELF_EXIT = 5
-    SELF_REFUSE = 6
-    HOSPITALIZATION = 7
-    HOSPITALIZATION_SELF_EXIT = 8
-    HOSPITALIZATION_SELF_REFUSE = 9
-    DEATH = 10
-    DISCHARGED_UNKNOWN_RESULT = 11
 
 
 @dataclass
@@ -55,6 +40,7 @@ class Examination:  # pylint: disable=too-many-instance-attributes
         patient_fullname: str,
         patient_birthday: datetime.date,
         examination_date: datetime.datetime,
+        doctor_fullname: str,
     ) -> Examination | None:
         select_query = (
             "SELECT "
@@ -104,10 +90,12 @@ class Examination:  # pylint: disable=too-many-instance-attributes
             "WHERE CONCAT_WS(' ', patients.family, patients.name, "
             "                     patients.surname) ILIKE %s "
             "   AND patients.birthday = %s "
+            "   AND CONCAT_WS(' ', doctor.family, doctor.name, "
+            "                      doctor.surname) ILIKE %s "
         )
         response = pg_select_data(
             select_query,
-            [patient_fullname, patient_birthday],
+            [patient_fullname, patient_birthday, doctor_fullname],
         )
         if not response:
             return None

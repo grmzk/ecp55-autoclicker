@@ -4,8 +4,8 @@ from time import sleep
 from selene import be, browser
 from selenium.webdriver.common.keys import Keys
 
-from case_disease import CaseDisease
-from utils import send_keys_one_by_one, wait_for_loading
+from ecp.case_disease import CaseDisease
+from ecp.utils import send_keys_one_by_one, wait_for_loading
 
 SET_DATE_ERROR_DLG_TIMEOUT = 1
 
@@ -73,7 +73,7 @@ def set_workplace():
     wait_for_loading()
 
 
-def get_outpatient_list():
+def get_outpatients_list():
     rows = browser.element("div[id$='gp-groupField-4-bd']").all("tr")
     print("Outpatient amount: " + str(len(rows)))
     case_of_disease_list: list[CaseDisease] = []
@@ -82,22 +82,11 @@ def get_outpatient_list():
     return case_of_disease_list
 
 
-def get_patient_list():
+def get_patients_list():
     rows = browser.element("div[id$='gp-groupField-2-bd']").all("tr")
     patients_amount = len(rows)
     print("Всего неоформленных пациентов: " + str(patients_amount))
-    print(
-        f"Получение данных из БД QInPatients: 0 из {patients_amount}",
-        end="\r",
-    )
-    case_of_disease_list: list[CaseDisease] = []
-    patient_count = 0
+    case_disease_list: list[CaseDisease] = []
     for element_row in rows:
-        case_of_disease_list.append(CaseDisease(element_row))
-        patient_count += 1
-        print(
-            "Получение данных из БД QInPatients: "
-            f"{patient_count} из {patients_amount}",
-            end="\r",
-        )
-    return case_of_disease_list
+        case_disease_list.append(CaseDisease(element_row))
+    return case_disease_list
