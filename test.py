@@ -18,14 +18,17 @@
 #     condition = condition_match.group().split("Общее состояние ")[-1]
 #     print(condition)
 
-from time import sleep
+# from time import sleep
 
-print("Программа запущена. Пожалуйста, подождите...", end="\r")
-sleep(1)
-print("Программа запущена. Пожалуйста, подождите еще...", end="\r")
-sleep(1)
-print("Программа запущена.                             ", end="\n")
+# print("Программа запущена. Пожалуйста, подождите...", end="\r")
+# sleep(1)
+# print("Программа запущена. Пожалуйста, подождите еще...", end="\r")
+# sleep(1)
+# print("Программа запущена.                             ", end="\n")
 
-arr = [1]
-if not arr:
-    print("not arr")
+# arr = [1]
+# if not arr:
+#     print("not arr")
+
+list0 = [0, 1, 2, 3]
+print(list0[1:2])

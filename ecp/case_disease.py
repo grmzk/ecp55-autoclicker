@@ -8,6 +8,7 @@ from ecp.exceptions import EcpAutoclickerException
 from ecp.utils import send_keys_one_by_one, wait_for_loading
 
 SET_RESULT_CODE_LIST_TIMEOUT = 5
+NO_DOCUMENT_DIALOG_TIMEOUT = 1
 
 DEFAULT_REASON_CODE = "X59.9"
 DEFAULT_DIAGNOSIS_CODE = "T14.9"
@@ -89,56 +90,33 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.result_status_number = 0
         self.inpatient_department_code = 0
 
-    def click(self):
-        browser.element("div[id$='gp-groupField-4-bd']").all("tr").element_by(
+    def __click(self):
+        browser.all("div.x-grid-group-body tr").element_by(
             have.text(self.ecp_patient_fullname).and_(
                 have.text(self.ecp_incoming_date.strftime("%d.%m.%Y %H:%M"))
             )
         ).click().click()
 
-    def double_click(self):
-        browser.element("div[id$='gp-groupField-2-bd']").all("tr").element_by(
+    def __double_click(self):
+        browser.all("div.x-grid-group-body tr").element_by(
             have.text(self.ecp_patient_fullname).and_(
                 have.text(self.ecp_incoming_date.strftime("%d.%m.%Y %H:%M"))
             )
         ).click().click().double_click()
         wait_for_loading()
 
-    def add_outpatient_card(self):
-        self.click()
-        browser.element("button[id='ext-gen742']").click()
-        browser.all("span[class='x-window-dlg']").element_by(
-            have.text("Продолжить сохранение?")
-        )
-
-    def select_outpatient_card_doctor(self):
-        self.add_outpatient_card()
-        browser.element(
-            "div[class*='x-grid3-col-autoexpand_vizit']"
-        ).click().double_click()
-        wait_for_loading()
-        wait_for_loading()
-
-    def select_outpatient_card_visit_code(self):
-        self.select_outpatient_card_doctor()
-        browser.element("img[id='ext-gen6682']").click()
-        # browser.element("div[id='ext-gen4964']").all("td").element_by(
-        #     have.text("B01.050.001")
-        # ).click()
-
-    def set_result_doctor(self):
+    def __set_result_doctor(self):
         if not self.doctor:
             raise EcpAutoclickerException(
                 f"Ошибка: для пациента {self.ecp_patient_fullname} "
                 "отсутствуют данные `doctor`."
             )
         browser.element("#EPSPEF_AdmitDepartPanel").click()
-        browser.element("#EPSPEF_MedStaffFactRecCombo").click().type(
-            self.doctor
-        )
+        element = browser.element("#EPSPEF_MedStaffFactRecCombo").click()
+        send_keys_one_by_one(element, self.doctor)
         browser.element("div.x-combo-selected + div").click()
 
-    def set_result_diagnosis_code(self):
+    def __set_result_diagnosis_code(self):
         if not self.diagnosis_code:
             raise EcpAutoclickerException(
                 f"Ошибка: для пациента {self.ecp_patient_fullname} "
@@ -181,7 +159,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
         ).click()
 
-    def set_result_trauma_type(self):
+    def __set_result_trauma_type(self):
         if not self.trauma_type_number:
             return
         # type_number = trauma_type_to_ecp[self.qinpatients.trauma_type]
@@ -189,7 +167,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             str(self.trauma_type_number)
         )
 
-    def set_result_reason_code(self):
+    def __set_result_reason_code(self):
         if not self.reason_code:
             return
         reason_code = self.reason_code
@@ -206,7 +184,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
         ).click()
 
-    def set_result_status(self):
+    def __set_result_status(self):
         if not self.result_status_number:
             raise EcpAutoclickerException(
                 f"Ошибка: для пациента {self.ecp_patient_fullname} "
@@ -228,7 +206,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         browser.element("#DiagSetPhase_pid + input").click().type("1")
         browser.element("#DeseaseType_id + input").click().type("1")
 
-    def set_result_date(self):
+    def __set_result_date(self):
         result_date = self.ecp_incoming_date + datetime.timedelta(hours=1)
         date_element = browser.element("input[name='EvnPS_OutcomeDate']")
         send_keys_one_by_one(
@@ -253,7 +231,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
                 Keys.BACKSPACE * 4 + result_date.strftime("%H%M"),
             )
 
-    def save_result(self):
+    def __save_result(self):
         browser.element(
             "table[matomo_event_id='win_swEvnPSPriemEditWindow_btn_Sohranit'] "
             "button"
@@ -261,11 +239,69 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         wait_for_loading()
 
     def set_result(self):
-        self.double_click()
-        self.set_result_doctor()
-        self.set_result_diagnosis_code()
-        self.set_result_trauma_type()
-        self.set_result_reason_code()
-        self.set_result_status()
-        self.set_result_date()
-        self.save_result()
+        self.__double_click()
+        self.__set_result_doctor()
+        self.__set_result_diagnosis_code()
+        self.__set_result_trauma_type()
+        self.__set_result_reason_code()
+        self.__set_result_status()
+        self.__set_result_date()
+        self.__save_result()
+
+    def __open_outpatient_card(self):
+        self.__click()
+        browser.element(
+            "table[matomo_event_id='win_swMPWorkPlacePriemWindow_tbr"
+            "_mpwpprToolbar_btn_Dobavit_sluchay_APL'] button"
+        ).click()
+        wait_for_loading()
+        try:
+            dialog = browser.element(
+                "div.x-window-dlg[style*='visibility: visible']"
+            )
+            dialog.with_(timeout=NO_DOCUMENT_DIALOG_TIMEOUT).wait.for_(
+                be.present
+            )
+            dialog.all("button").element_by(have.text("Нет")).click()
+            browser.element(
+                "table[matomo_event_id='win_swEvnPLEditWindow_btn_Otmena'] "
+                "button"
+            ).click()
+        except Exception:
+            return True
+        return False
+
+    def __select_outpatient_card_examination(self):
+        browser.element("#EPLEF_EvnVizitPLGrid .x-grid3-scroller").all(
+            "tr div"
+        ).element_by(have.text(self.doctor)).click().double_click()
+        wait_for_loading()
+        wait_for_loading()
+
+    def __set_outpatient_card_visit_code(self):
+        browser.element(
+            "#x-form-el-EVPLEF_UslugaComplex "
+            ".x-form-twin-triggers img:first-child"
+        ).click()
+        browser.element("tr.x-combo-selected").click()
+
+    def __set_outpatient_card_validity_level(self):
+        browser.element("#DiagValidityType_id + input").click().type("3")
+
+    def __set_outpatient_card_patient_condition(self):
+        browser.element("#DiagSetPhase_id + input").click().type("1")
+
+    def __save_outpatient_card_examination(self):
+        browser.element(
+            "table[matomo_event_id='win_swEvnVizitPLEditWindow_btn_Sohranit'] "
+            "button"
+        ).click()
+
+    def set_outpatient_card_number(self):
+        if not self.__open_outpatient_card():
+            return
+        self.__select_outpatient_card_examination()
+        self.__set_outpatient_card_visit_code()
+        self.__set_outpatient_card_validity_level()
+        self.__set_outpatient_card_patient_condition()
+        self.__save_outpatient_card_examination()

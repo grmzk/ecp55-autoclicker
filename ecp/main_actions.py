@@ -73,20 +73,32 @@ def set_workplace():
     wait_for_loading()
 
 
-def get_outpatients_list():
+def get_patients_no_outpatient_card_number():
     rows = browser.element("div[id$='gp-groupField-4-bd']").all("tr")
-    print("Outpatient amount: " + str(len(rows)))
-    case_of_disease_list: list[CaseDisease] = []
-    for element_row in rows:
-        case_of_disease_list.append(CaseDisease(element_row))
-    return case_of_disease_list
-
-
-def get_patients_list():
-    rows = browser.element("div[id$='gp-groupField-2-bd']").all("tr")
-    patients_amount = len(rows)
-    print("Всего неоформленных пациентов: " + str(patients_amount))
     case_disease_list: list[CaseDisease] = []
     for element_row in rows:
-        case_disease_list.append(CaseDisease(element_row))
+        case_disease = CaseDisease(element_row)
+        if (
+            case_disease.ecp_outpatient_card_number
+            or case_disease.ecp_diagnosis.startswith("Z00.0.")
+        ):
+            continue
+        case_disease_list.append(case_disease)
+    print(
+        "Всего амбулаторных пациентов без амбулаторного номера: "
+        f"{len(case_disease_list)}"
+    )
+    return case_disease_list
+
+
+def get_patients_intact():
+    rows = list(browser.element("div[id$='gp-groupField-2-bd']").all("tr"))
+    rows.extend(browser.element("div[id$='gp-groupField-4-bd']").all("tr"))
+    case_disease_list: list[CaseDisease] = []
+    for element_row in rows:
+        case_disease = CaseDisease(element_row)
+        # if not case_disease.ecp_diagnosis.startswith("Z00.0."):
+        #     continue
+        case_disease_list.append(case_disease)
+    print(f"Всего неоформленных пациентов: {len(case_disease_list)}")
     return case_disease_list
