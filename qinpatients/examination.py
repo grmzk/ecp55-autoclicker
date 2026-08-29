@@ -35,6 +35,66 @@ class Examination:  # pylint: disable=too-many-instance-attributes
     department: str
     result_status: ResultStatus
 
+    def get_age(self, at_date=datetime.datetime.now().date()):
+        birthday = self.patient_birthday
+        age = (
+            at_date.year
+            - birthday.year
+            - ((at_date.month, at_date.day) < (birthday.month, birthday.day))
+        )
+        ending: str
+        if 5 <= age <= 20:
+            ending = "лет"
+        elif age % 10 == 1:
+            ending = "год"
+        elif 2 <= age % 10 <= 4:
+            ending = "года"
+        else:
+            ending = "лет"
+        return f"{age} {ending}"
+
+    def get_examination_text(self):
+        examination_text = (
+            f"Осмотр травматолога: {self.doctor}\n"
+            f"Дата: {self.examination_date.strftime('%d.%m.%Y %H:%M')}\n"
+            f"Ф.И.О.: {self.patient_fullname}, "
+            f"{self.examination_date.strftime('%d.%m.%Y')} г. р. "
+            f"({self.get_age(self.examination_date.date())})\n"
+            f"Вид травмы: {self.trauma_type}\n"
+            "Жалобы:\n"
+            f"{self.complaints}\n"
+            "Анамнез заболевания:\n"
+            f"{self.anamnesis_morbi}\n"
+            "Анамнез жизни:\n"
+            f"{self.anamnesis_vitae}\n"
+            "Объективный статус:\n"
+            f"{self.status_praesens}\n"
+            "Локальный статус:\n"
+            f"{self.status_localis}\n"
+            "Диагноз предварительный:\n"
+            f"{self.pre_diagnosis}\n"
+            f"Врач: {self.doctor}\n"
+            "План обследования:\n"
+            f"{self.examination_plan}\n"
+            "Описание рентгенограмм:\n"
+            f"{self.rg_description}\n"
+            "Диагноз:\n"
+            f"{self.diagnosis}\n"
+            "Обоснование диагноза:\n"
+            "Диагноз поставлен на основании жалоб, анамнеза, данных осмотра, "
+            "результатов лабораторных и инструментальных исследований, "
+            "консультаций специалистов.\n"
+            f"Врач: {self.doctor}\n"
+            "Зав. Отделением (первый дежурный травматолог): "
+            f"{self.first_doctor}\n"
+            "Манипуляции:\n"
+            f"{self.manipulations}\n"
+            "Рекомендации:\n"
+            f"{self.recommendations}\n"
+            f"Врач: {self.doctor}"
+        ).replace("<br>", "\n")
+        return examination_text
+
     @staticmethod
     def get_examination(
         patient_fullname: str,
@@ -117,18 +177,3 @@ class Examination:  # pylint: disable=too-many-instance-attributes
             if abs(date_difference) < EXAMINATION_DATE_LAG:
                 return examination
         return None
-
-
-# print(
-#     Examination.get_examination(
-#         "ОВАСАПЯН АЛЬБЕРТ ВАНИКОВИЧ",
-#         datetime.date(1988, 6, 14),
-#         datetime.datetime(
-#             2024,
-#             6,
-#             3,
-#             14,
-#             31,
-#         ),
-#     )
-# )

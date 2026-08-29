@@ -30,5 +30,21 @@
 # if not arr:
 #     print("not arr")
 
-list0 = [0, 1, 2, 3]
-print(list0[1:2])
+# import datetime
+
+# from qinpatients.examination import Examination
+
+# print(
+#     Examination.get_examination(
+#         "ИВАНОВА АЛЛА ВАЛЕНТИНОВНА",
+#         datetime.date(1968, 5, 15),
+#         datetime.datetime(
+#             2026,
+#             7,
+#             30,
+#             19,
+#             54,
+#         ),
+#         "Павельев Петр Владимирович",
+#     ).get_examination_text()
+# )
