@@ -97,8 +97,8 @@ def get_patients_intact():
     case_disease_list: list[CaseDisease] = []
     for element_row in rows:
         case_disease = CaseDisease(element_row)
-        # if not case_disease.ecp_diagnosis.startswith("Z00.0."):
-        #     continue
+        if not case_disease.ecp_diagnosis.startswith("Z00.0."):
+            continue
         case_disease_list.append(case_disease)
     print(f"Всего неоформленных пациентов: {len(case_disease_list)}")
     return case_disease_list

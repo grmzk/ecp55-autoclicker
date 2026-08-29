@@ -274,7 +274,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
     def __select_outpatient_card_examination(self):
         browser.element("#EPLEF_EvnVizitPLGrid .x-grid3-scroller").all(
             "tr div"
-        ).element_by(have.text(self.doctor)).click().double_click()
+        ).element_by(have.text(self.doctor.upper())).click().double_click()
         wait_for_loading()
         wait_for_loading()
 
@@ -296,6 +296,12 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "table[matomo_event_id='win_swEvnVizitPLEditWindow_btn_Sohranit'] "
             "button"
         ).click()
+        wait_for_loading()
+        browser.element(
+            "table[matomo_event_id='win_swEvnPLEditWindow_btn_Sohranit'] "
+            "button"
+        ).click()
+        wait_for_loading()
 
     def set_outpatient_card_number(self):
         if not self.__open_outpatient_card():

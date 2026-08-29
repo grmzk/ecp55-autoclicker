@@ -11,7 +11,7 @@ from qinpatients.adapters import get_qinpatients_patients
 
 load_dotenv()
 
-ECP_DATE = datetime.date(2026, 8, 23)
+ECP_DATE = datetime.date(2026, 7, 30)
 GLOBAL_BROWSER_TIMEOUT = 60
 
 credentials = {
@@ -23,7 +23,7 @@ credentials = {
 def main():
     browser.config.base_url = "https://ecp55.is-mis.ru"
     browser.config.window_width = 1920
-    browser.config.window_height = 900
+    browser.config.window_height = 700
     browser.config.timeout = GLOBAL_BROWSER_TIMEOUT
     driver_options = webdriver.ChromeOptions()
     # driver_options.add_argument("--headless")
@@ -38,46 +38,51 @@ def main():
     ecp_main_actions.set_workplace()
     ecp_main_actions.set_ecp_date(ECP_DATE)
 
-    # patients_intact = ecp_main_actions.get_patients_intact()
-    # patients_qinpatients = get_qinpatients_patients(
-    #     patients_intact, doctor_fullname
-    # )
-    # get_diagnosis_reason_code(patients_qinpatients)
+    patients_intact = ecp_main_actions.get_patients_intact()
+    patients_qinpatients = get_qinpatients_patients(
+        patients_intact, doctor_fullname
+    )
+    get_diagnosis_reason_code(patients_qinpatients)
 
-    # # input("Press Enter to exit...")
-    # # return
+    # input("Press Enter to exit...")
+    # return
 
-    # for i, patient in enumerate(patients_qinpatients):
-    #     print(
-    #         f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
-    #         f"код диагноза: {patient.diagnosis_code}, "
-    #         f"код причины: {patient.reason_code}"
-    #         "\t::: в процессе оформления результата ...",
-    #         end="\r",
-    #     )
-    #     patient.set_result()
-    #     print(
-    #         f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
-    #         f"код диагноза: {patient.diagnosis_code}, "
-    #         f"код причины: {patient.reason_code}"
-    #         "\t::: РЕЗУЛЬТАТ ОФОРМЛЕН                  ",
-    #     )
+    for i, patient in enumerate(patients_qinpatients):
+        print(
+            f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
+            f"код диагноза: {patient.diagnosis_code}, "
+            f"код причины: {patient.reason_code}"
+            "\t::: в процессе оформления результата ...",
+            end="\r",
+        )
+        patient.set_result()
+        print(
+            f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
+            f"код диагноза: {patient.diagnosis_code}, "
+            f"код причины: {patient.reason_code}"
+            "\t::: РЕЗУЛЬТАТ ОФОРМЛЕН                  ",
+        )
 
-    patients_no_ocn = ecp_main_actions.get_patients_no_outpatient_card_number()
+    patients_no_ocn_all = (
+        ecp_main_actions.get_patients_no_outpatient_card_number()
+    )
+    patients_no_ocn = get_qinpatients_patients(
+        patients_no_ocn_all, doctor_fullname
+    )
 
-    for i, patient in enumerate(patients_no_ocn[0:2]):
-        # print(
-        #     f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
-        #     f"диагноз: {patient.ecp_diagnosis}"
-        #     "\t::: в процессе оформления амбулаторного номера ...",
-        #     end="\r",
-        # )
+    for i, patient in enumerate(patients_no_ocn):
+        print(
+            f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
+            f"диагноз: {patient.ecp_diagnosis}"
+            "\t::: в процессе оформления амбулаторного номера ...",
+            end="\r",
+        )
         patient.set_outpatient_card_number()
-        # print(
-        #     f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
-        #     f"диагноз: {patient.ecp_diagnosis}"
-        #     "\t::: АМБУЛАТОРНЫЙ НОМЕР ОФОРМЛЕН                   ",
-        # )
+        print(
+            f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
+            f"диагноз: {patient.ecp_diagnosis}"
+            "\t::: АМБУЛАТОРНЫЙ НОМЕР ОФОРМЛЕН                   ",
+        )
 
     input("Press Enter to exit...")
 
