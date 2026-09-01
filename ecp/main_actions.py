@@ -175,11 +175,15 @@ def perform_outpatient_card_number(doctor_fullname: str):
             "\t::: в процессе оформления амбулаторного номера ...",
             end="\r",
         )
-        patient.set_outpatient_card_number()
+        result = (
+            "АМБУЛАТОРНЫЙ НОМЕР ОФОРМЛЕН"
+            if patient.set_outpatient_card_number()
+            else "ОТСУТСТВУЕТ ПОЛИС ОМС      "
+        )
         print(
             f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
             f"диагноз: {patient.ecp_diagnosis.split(". ", maxsplit=1)[0]}"
-            "\t::: АМБУЛАТОРНЫЙ НОМЕР ОФОРМЛЕН                   ",
+            f"\t::: {result}                   ",
         )
     print()
 

@@ -308,12 +308,13 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
 
     def set_outpatient_card_number(self):
         if not self.__open_outpatient_card():
-            return
+            return False
         self.__select_outpatient_card_examination()
         self.__set_outpatient_card_visit_code()
         self.__set_outpatient_card_validity_level()
         self.__set_outpatient_card_patient_condition()
         self.__save_outpatient_card_examination()
+        return True
 
     def __open_emh(self):
         self.__click()
