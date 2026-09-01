@@ -24,6 +24,10 @@ def main():
     browser.config.window_height = 900
     browser.config.timeout = GLOBAL_BROWSER_TIMEOUT
     driver_options = webdriver.ChromeOptions()
+    driver_options.add_argument(
+        "--user-data-dir=/home/miv-sisyphus/.config/chromium"
+    )
+    driver_options.add_argument("--profile-directory=Profile 1")
     # driver_options.add_argument("--headless")
     driver_options.add_argument("--start-maximized")
     browser.config.driver_options = driver_options

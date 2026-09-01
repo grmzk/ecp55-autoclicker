@@ -362,7 +362,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         wait_for_loading()
         element = (
             browser.all("#XmlTemplateGrid div.x-grid3-body > div.x-grid3-row")
-            .element_by(have.text("Первичный осмотр"))
+            .element_by(have.exact_text("Первичный осмотр"))
             .click()
         )
         wait_for_loading()
@@ -376,7 +376,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         iframe_webelement = iframe.locate()
         browser.driver.switch_to.frame(iframe_webelement)
         browser.element("#tinymce > p").click().type(
-            Keys.BACKSPACE + self.examination_text
+            self.examination_text
         ).press_enter()
         browser.driver.switch_to.default_content()
         self.__select_emh_case_disease()
