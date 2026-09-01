@@ -68,3 +68,7 @@
 # )
 
 # print(test)
+
+# text = "f"
+# print(text[:-2])  # Output: "fu"
+# print(text[-2:])  # Output: "fuc"

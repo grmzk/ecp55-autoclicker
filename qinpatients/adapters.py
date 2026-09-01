@@ -59,6 +59,7 @@ def get_qinpatients_patients(
             examination.department, 0
         )
         case_disease.examination_text = examination.get_examination_text()
+        case_disease.qinpatients_examination = examination
         case_disease_list.append(case_disease)
     print(
         "Получение данных из БД QInPatients: "

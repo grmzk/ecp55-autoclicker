@@ -4,10 +4,12 @@ from selene import be, browser
 from selene.core.entity import Element
 
 
-def send_keys_one_by_one(element: Element, keys: str):
+def send_keys_one_by_one(
+    element: Element, keys: str, sleep_time: float = 0.01
+):
     for key in keys:
         element.send_keys(key)
-        sleep(0.01)
+        sleep(sleep_time)
 
 
 def wait_for_loading():

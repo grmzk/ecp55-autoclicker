@@ -6,6 +6,7 @@ from selenium.webdriver.common.keys import Keys
 
 from ecp.exceptions import EcpAutoclickerException
 from ecp.utils import send_keys_one_by_one, wait_for_loading
+from qinpatients.examination import Examination
 
 SET_RESULT_CODE_LIST_TIMEOUT = 5
 NO_DOCUMENT_DIALOG_TIMEOUT = 1
@@ -90,6 +91,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.result_status_number = 0
         self.inpatient_department_code = 0
         self.examination_text = ""
+        self.qinpatients_examination: Examination | None = None
 
     def __click(self):
         browser.all("div.x-grid-group-body tr").element_by(
@@ -362,7 +364,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         wait_for_loading()
         element = (
             browser.all("#XmlTemplateGrid div.x-grid3-body > div.x-grid3-row")
-            .element_by(have.exact_text("Первичный осмотр"))
+            .element_by(have.exact_text("Первичный осмотр (травматолог)"))
             .click()
         )
         wait_for_loading()
@@ -370,16 +372,114 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         wait_for_loading()
         wait_for_loading()
 
-    def __set_emh_examination_text(self):
-        iframe = browser.element("div.NewStyleDoc > div.WrapDoc iframe")
+    def __set_emh_examination_text_to_block(self, field_name: str, text: str):
+        iframe = browser.element(
+            "div.NewStyleDoc div.WrapDoc div.freedoc_opened "
+            f"iframe[id^='{field_name}']"
+        )
         iframe.wait.for_(be.present)
         iframe_webelement = iframe.locate()
         browser.driver.switch_to.frame(iframe_webelement)
-        browser.element("#tinymce > p").click().type(
-            self.examination_text
-        ).press_enter()
+        element = browser.element("#tinymce > p")
+        text_start = text[:-3]
+        text_end = text[-3:]
+        if len(text) < 7:
+            text_start = ""
+            text_end = text
+        element.click().type(text_start)
+        send_keys_one_by_one(element, text_end)
         browser.driver.switch_to.default_content()
-        self.__select_emh_case_disease()
+
+    def __set_emh_examination_text(self):
+        if not self.qinpatients_examination:
+            raise EcpAutoclickerException(
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "отсутствуют данные `qinpatients_examination`."
+            )
+        self.__set_emh_examination_text_to_block(
+            "field_complaint", self.qinpatients_examination.complaints
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_anamnesmorbi", self.qinpatients_examination.anamnesis_morbi
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_anamnesvitae", self.qinpatients_examination.anamnesis_vitae
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_objectivestatus",
+            self.qinpatients_examination.status_praesens,
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_localstatus", self.qinpatients_examination.status_localis
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_autoname1", self.qinpatients_examination.pre_diagnosis
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_autoname2", self.qinpatients_examination.pre_doctor
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_SurveyPlan",
+            self.qinpatients_examination.examination_plan.replace(
+                "<br>", "\n"
+            ),
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_researchResults",
+            self.qinpatients_examination.rg_description,
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_diagnos", self.qinpatients_examination.diagnosis
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_Rationalediag",
+            "Диагноз поставлен на основании жалоб, анамнеза, "
+            "данных осмотра, результатов лабораторных и инструментальных "
+            "исследований, консультаций специалистов.",
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_autoname3", self.qinpatients_examination.doctor
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_autoname4", self.qinpatients_examination.first_doctor
+        )
+        prescribes = self.qinpatients_examination.prescribes.replace(
+            "<br>", "\n"
+        )
+        manipulations = self.qinpatients_examination.manipulations.replace(
+            "<br>", "\n"
+        )
+        manipulations_all = (
+            f"{prescribes + '\n' if prescribes else ''}{manipulations}"
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_AdditionalOper", manipulations_all
+        )
+        hospitalization = (
+            (
+                self.qinpatients_examination.hospitalization.replace(
+                    "<br>", "\n"
+                )
+                .replace("<br>", "\n")
+                .replace('<span style=" text-decoration: underline;">', "")
+                .replace("</span>", "")
+            )
+            if self.qinpatients_examination.hospitalization
+            else "госпитализация не показана"
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_TreatmentPlan", hospitalization
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_AdditionalData", self.qinpatients_examination.special_note
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_recommendations",
+            self.qinpatients_examination.recommendations.replace("<br>", "\n"),
+        )
+        self.__set_emh_examination_text_to_block(
+            "field_autoname5", self.qinpatients_examination.doctor
+        )
 
     def __close_emh(self):
         browser.element(
