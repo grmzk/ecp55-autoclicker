@@ -36,15 +36,35 @@
 
 # print(
 #     Examination.get_examination(
-#         "ИВАНОВА АЛЛА ВАЛЕНТИНОВНА",
-#         datetime.date(1968, 5, 15),
+#         "ГОЛОФАЕВ АНТОН СЕРГЕЕВИЧ",
+#         datetime.date(1989, 2, 15),
 #         datetime.datetime(
 #             2026,
-#             7,
-#             30,
-#             19,
-#             54,
+#             8,
+#             1,
+#             17,
+#             29,
 #         ),
 #         "Павельев Петр Владимирович",
 #     ).get_examination_text()
 # )
+
+# diagnosis = "S62.30. Перелом другой пястной кости закрытый"
+# print(diagnosis.split(". ", maxsplit=1)[0])
+
+
+# test = (
+#     "показана госпитализация в отделение травматологии."
+#     '<br><span style=" text-decoration: underline;">План лечения:</span><br>'
+#     "- Анальгетики: Sol. Ketorolaci 1,0 в/м.<br>"
+#     "- Профилактика ТЭЛА: Прадакса 110 мг х 2 р/д, эластичное бинтование "
+#     "нижних конечностей.<br>"
+#     "Полный список медикаментов в листе назначений."
+# )
+# test = (
+#     test.replace("<br>", "\n")
+#     .replace('<span style=" text-decoration: underline;">', "")
+#     .replace("</span>", "")
+# )
+
+# print(test)

@@ -89,6 +89,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.condition_number = 1
         self.result_status_number = 0
         self.inpatient_department_code = 0
+        self.examination_text = ""
 
     def __click(self):
         browser.all("div.x-grid-group-body tr").element_by(
@@ -311,3 +312,89 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.__set_outpatient_card_validity_level()
         self.__set_outpatient_card_patient_condition()
         self.__save_outpatient_card_examination()
+
+    def __open_emh(self):
+        self.__click()
+        browser.element("#mpwpprToolbar").all("button").element_by(
+            have.text("Открыть ЭМК")
+        ).click()
+        wait_for_loading()
+
+    def __select_emh_case_disease(self):
+        browser.element("#PersonEmkTree").all(
+            "span[unselectable='on']"
+        ).element_by(
+            have.text(f"{self.ecp_incoming_date.strftime("%d.%m.%Y")} - ")
+            .and_(have.text(self.ecp_diagnosis.split(". ", maxsplit=1)[0]))
+            .and_(have.text("отделение приемное"))
+        ).click()
+        wait_for_loading()
+
+    def __exists_emh_examination_text(self):
+        try:
+            browser.all("div.NewStyleDoc > div.WrapDoc").element_by(
+                have.text(self.doctor.upper())
+            ).with_(timeout=0.25).should(be.present)
+        except Exception:
+            return False
+        return True
+
+    def __click_emh_add_document(self):
+        browser.element(
+            "div.caption > h2 > span[id^='EvnXmlProtokolList']"
+        ).hover()
+        browser.element(
+            "a.button[id^='EvnXmlProtokolList'][title='Добавить документ']"
+        ).click()
+        browser.element("div.x-menu[style*='visibility: visible;']").all(
+            "li a"
+        ).element_by(have.text("Первичный осмотр при поступлении")).click()
+        wait_for_loading()
+
+    def __select_emh_template(self):
+        browser.element("input[name='templName']").type(
+            "Музыкин"
+        ).press_enter()
+        wait_for_loading()
+        browser.all(
+            "#XmlTemplateGrid div.x-grid3-body > div.x-grid3-row"
+        ).element_by(have.text("Музыкин")).double_click()
+        wait_for_loading()
+        element = (
+            browser.all("#XmlTemplateGrid div.x-grid3-body > div.x-grid3-row")
+            .element_by(have.text("Первичный осмотр"))
+            .click()
+        )
+        wait_for_loading()
+        element.double_click()
+        wait_for_loading()
+        wait_for_loading()
+
+    def __set_emh_examination_text(self):
+        iframe = browser.element("div.NewStyleDoc > div.WrapDoc iframe")
+        iframe.wait.for_(be.present)
+        iframe_webelement = iframe.locate()
+        browser.driver.switch_to.frame(iframe_webelement)
+        browser.element("#tinymce > p").click().type(
+            Keys.BACKSPACE + self.examination_text
+        ).press_enter()
+        browser.driver.switch_to.default_content()
+        self.__select_emh_case_disease()
+
+    def __close_emh(self):
+        browser.element(
+            "table[matomo_event_id='win_swPersonEmkWindow_btn_Zakrit'] button"
+        ).click()
+        wait_for_loading()
+
+    def set_emh_examination_text(self):
+        self.__open_emh()
+        self.__select_emh_case_disease()
+        if self.__exists_emh_examination_text():
+            self.__close_emh()
+            return False
+        self.__click_emh_add_document()
+        self.__select_emh_template()
+        self.__set_emh_examination_text()
+        self.__close_emh()
+        return True

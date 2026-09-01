@@ -76,6 +76,10 @@ class Examination:  # pylint: disable=too-many-instance-attributes
             f"Врач: {self.doctor}\n"
             "План обследования:\n"
             f"{self.examination_plan}\n"
+            f"{
+                f"Назначено:\n{self.prescribes}\n"
+                if self.prescribes else ''
+            }"
             "Описание рентгенограмм:\n"
             f"{self.rg_description}\n"
             "Диагноз:\n"
@@ -87,12 +91,29 @@ class Examination:  # pylint: disable=too-many-instance-attributes
             f"Врач: {self.doctor}\n"
             "Зав. Отделением (первый дежурный травматолог): "
             f"{self.first_doctor}\n"
-            "Манипуляции:\n"
-            f"{self.manipulations}\n"
-            "Рекомендации:\n"
-            f"{self.recommendations}\n"
+            f"{
+                f"Манипуляции:\n{self.manipulations}\n"
+                if self.manipulations else ''
+            }"
+            f"{
+                f"Госпитализация:\n{self.hospitalization}\n"
+                if self.hospitalization else ''
+            }"
+            f"{
+                f"Особые замечания:\n{self.special_note}\n"
+                if self.special_note else ''
+            }"
+            f"{
+                f"Рекомендации:\n{self.recommendations}\n"
+                if self.recommendations else ''
+            }"
             f"Врач: {self.doctor}"
-        ).replace("<br>", "\n")
+        )
+        examination_text = (
+            examination_text.replace("<br>", "\n")
+            .replace('<span style=" text-decoration: underline;">', "")
+            .replace("</span>", "")
+        )
         return examination_text
 
     @staticmethod

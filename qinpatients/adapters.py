@@ -58,6 +58,7 @@ def get_qinpatients_patients(
         case_disease.inpatient_department_code = department_to_ecp.get(
             examination.department, 0
         )
+        case_disease.examination_text = examination.get_examination_text()
         case_disease_list.append(case_disease)
     print(
         "Получение данных из БД QInPatients: "

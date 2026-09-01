@@ -14,8 +14,8 @@ def wait_for_loading():
     # print("Waiting for loading...", end="\r")
     try:
         element = browser.element("div[class$='x-mask-loading']")
-        element.wait.for_(be.existing)
-        element.wait.for_(be.not_.existing)
+        element.wait.for_(be.present)
+        element.wait.for_(be.not_.present)
     # except TimeoutException:
     #     pass
     except Exception:
