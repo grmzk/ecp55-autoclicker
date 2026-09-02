@@ -10,7 +10,7 @@ from ecp.utils import send_keys_one_by_one, wait_for_loading
 from qinpatients.examination import Examination
 
 SET_RESULT_CODE_LIST_TIMEOUT = 5
-NO_DOCUMENT_DIALOG_TIMEOUT = 1
+OUTPATIENT_CARD_DIALOG_TIMEOUT = 1.5
 
 DEFAULT_REASON_CODE = "X59.9"
 DEFAULT_DIAGNOSIS_CODE = "T14.9"
@@ -260,6 +260,49 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.__set_result_date()
         self.__save_result()
 
+    def __handle_outpatient_card_dialog_window(self):
+        try:
+            dialog = browser.element(
+                "div.x-window-dlg[style*='visibility: visible']"
+            )
+            dialog.with_(timeout=OUTPATIENT_CARD_DIALOG_TIMEOUT).wait.for_(
+                be.present
+            )
+        except Exception:
+            return True
+        dialog_message = (
+            dialog.element("span.ext-mb-text")
+            .locate()
+            .get_attribute("innerText")
+        )
+        if not dialog_message:
+            raise EcpAutoclickerException(
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                "при оформлении амбулаторного номера не удалось получить "
+                "сообщение из диалогового окна"
+            )
+        dialog_messages_yes = [
+            "Данное посещение имеет пересечение",
+        ]
+        for message_yes in dialog_messages_yes:
+            if message_yes in dialog_message:
+                dialog.all("button").element_by(have.text("Да")).click()
+                return True
+        dialog_messages_no: list[str] = []
+        for message_no in dialog_messages_no:
+            if message_no in dialog_message:
+                dialog.all("button").element_by(have.text("Нет")).click()
+                browser.element(
+                    "table[matomo_event_id"
+                    "='win_swEvnPLEditWindow_btn_Otmena'] button"
+                ).click()
+                return False
+        raise EcpAutoclickerException(
+            f"Ошибка: для пациента {self.ecp_patient_fullname} "
+            "при оформлении амбулаторного номера получено неизвестное "
+            "сообщение из диалогового окна"
+        )
+
     def __open_outpatient_card(self):
         self.__click()
         browser.element(
@@ -267,21 +310,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "_mpwpprToolbar_btn_Dobavit_sluchay_APL'] button"
         ).click()
         wait_for_loading()
-        try:
-            dialog = browser.element(
-                "div.x-window-dlg[style*='visibility: visible']"
-            )
-            dialog.with_(timeout=NO_DOCUMENT_DIALOG_TIMEOUT).wait.for_(
-                be.present
-            )
-            dialog.all("button").element_by(have.text("Нет")).click()
-            browser.element(
-                "table[matomo_event_id='win_swEvnPLEditWindow_btn_Otmena'] "
-                "button"
-            ).click()
-        except Exception:
-            return True
-        return False
+        return self.__handle_outpatient_card_dialog_window()
 
     def __select_outpatient_card_examination(self, doctor_fullname: str):
         browser.element("#EPLEF_EvnVizitPLGrid .x-grid3-scroller").all(
@@ -308,6 +337,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "table[matomo_event_id='win_swEvnVizitPLEditWindow_btn_Sohranit'] "
             "button"
         ).click()
+        self.__handle_outpatient_card_dialog_window()
         wait_for_loading()
         browser.element(
             "table[matomo_event_id='win_swEvnPLEditWindow_btn_Sohranit'] "

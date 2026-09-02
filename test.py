@@ -80,3 +80,13 @@
 # i1, i2, i3 = 1234567, 45, 856
 # # Выводим числа в колонки шириной по 10 символов
 # print(f'{f"({i1})":<5}{f"({i2})":<5}{f"({i3})":<5}')
+
+# from datetime import date
+
+# start_date = date(2023, 1, 1)
+# end_date = date(2023, 1, 7)  # Включаем end_date
+
+# # Важно: end_date нужно сдвинуть на день вперёд, иначе цикл его не захватит
+# for ordinal in range(start_date.toordinal(), end_date.toordinal() + 1):
+#     current_date = date.fromordinal(ordinal)
+#     print(current_date)

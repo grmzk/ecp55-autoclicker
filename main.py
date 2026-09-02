@@ -9,7 +9,8 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE = datetime.date(2026, 8, 4)
+ECP_DATE_FROM = datetime.date(2026, 8, 9)
+ECP_DATE_TO = datetime.date(2026, 8, 10)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {
@@ -36,10 +37,14 @@ def main():
     ecp_main_actions.login(credentials["username"], credentials["password"])
     doctor_fullname = ecp_main_actions.get_doctor_fullname()
     ecp_main_actions.set_workplace()
-    ecp_main_actions.set_ecp_date(ECP_DATE)
-    ecp_main_actions.perform_examinations_result(doctor_fullname)
-    ecp_main_actions.perform_outpatient_card_number(doctor_fullname)
-    ecp_main_actions.perform_emh_examination_text(doctor_fullname)
+    for ordinal in range(
+        ECP_DATE_FROM.toordinal(), ECP_DATE_TO.toordinal() + 1
+    ):
+        ecp_date = datetime.date.fromordinal(ordinal)
+        ecp_main_actions.set_ecp_date(ecp_date)
+        ecp_main_actions.perform_examinations_result(doctor_fullname)
+        ecp_main_actions.perform_outpatient_card_number(doctor_fullname)
+        ecp_main_actions.perform_emh_examination_text(doctor_fullname)
 
     input("Press Enter to exit...")
 

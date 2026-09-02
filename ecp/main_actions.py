@@ -193,6 +193,7 @@ def get_patients_intact(doctor_fullname: str):
     patients_emh = get_patients_data_from_emh(
         patients_noqinpatients, doctor_fullname
     )
+    # patients_emh = []
     print()
     return patients_qinpatients + patients_emh
 
