@@ -9,7 +9,7 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE = datetime.date(2026, 7, 30)
+ECP_DATE = datetime.date(2026, 8, 4)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {

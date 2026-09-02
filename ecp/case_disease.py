@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 
 from selene import be, browser, have
 from selene.core.entity import Element
@@ -18,6 +19,13 @@ DEFAULT_DIAGNOSIS_WOUND_CODE = "T14.1"
 DEFAULT_DIAGNOSIS_FRACTURE_CODE = "T14.2"
 DEFAULT_DIAGNOSIS_DISLOCATED_CODE = "T14.3"
 DEFAULT_DIAGNOSIS_AMPUTATION_CODE = "T14.7"
+
+
+class FromEmhResults(Enum):
+    OTHER_DOCTOR = "ДРУГОЙ ВРАЧ"
+    INPATIENT = "ГОСПИТАЛИЗАЦИЯ (НЕ МОЖЕТ БЫТЬ ОФОРМЛЕН АВТОМАТИЧЕСКИ)"
+    OUTPATIENT = "АМБУЛАТОРНОЕ ЛЕЧЕНИЕ (К ОФОРМЛЕНИЮ)"
+    UNKNOWN_RESULT = "РЕЗУЛЬТАТ НЕИЗВЕСТЕН"
 
 
 class CaseDisease:  # pylint: disable=too-many-instance-attributes
@@ -81,12 +89,13 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             if outpatient_card_number_str
             else None
         )
+        self.is_ecp_inpatient = False
         self.doctor = ""
         self.diagnosis = ""
         self.diagnosis_code = ""
         self.reason_code = ""
         self.anamnesis_morbi = ""
-        self.trauma_type_number = 0
+        self.trauma_type_number = 6
         self.condition_number = 1
         self.result_status_number = 0
         self.inpatient_department_code = 0
@@ -155,8 +164,8 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
                 diagnosis_code = DEFAULT_DIAGNOSIS_BRUISE_CODE
             else:
                 diagnosis_code = DEFAULT_DIAGNOSIS_CODE
-            browser.element("#EPSPEF_DiagRecepCombo + input").click().type(
-                diagnosis_code
+            browser.element("#EPSPEF_DiagRecepCombo").type(
+                Keys.BACKSPACE * 6 + diagnosis_code
             )
         browser.element(
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
@@ -180,8 +189,8 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
                 "div.x-combo-list[style*='visibility: visible']"
             ).with_(timeout=SET_RESULT_CODE_LIST_TIMEOUT).wait.for_(be.present)
         except Exception:
-            browser.element("#Diag_eid + input").click().type(
-                DEFAULT_REASON_CODE
+            browser.element("#Diag_eid + input").type(
+                Keys.BACKSPACE * 6 + DEFAULT_REASON_CODE
             )
         browser.element(
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
@@ -274,10 +283,10 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             return True
         return False
 
-    def __select_outpatient_card_examination(self):
+    def __select_outpatient_card_examination(self, doctor_fullname: str):
         browser.element("#EPLEF_EvnVizitPLGrid .x-grid3-scroller").all(
             "tr div"
-        ).element_by(have.text(self.doctor.upper())).click().double_click()
+        ).element_by(have.text(doctor_fullname.upper())).click().double_click()
         wait_for_loading()
         wait_for_loading()
 
@@ -306,10 +315,10 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         ).click()
         wait_for_loading()
 
-    def set_outpatient_card_number(self):
+    def set_outpatient_card_number(self, doctor_fullname: str):
         if not self.__open_outpatient_card():
             return False
-        self.__select_outpatient_card_examination()
+        self.__select_outpatient_card_examination(doctor_fullname)
         self.__set_outpatient_card_visit_code()
         self.__set_outpatient_card_validity_level()
         self.__set_outpatient_card_patient_condition()
@@ -333,10 +342,10 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         ).click()
         wait_for_loading()
 
-    def __exists_emh_examination_text(self):
+    def __exists_emh_examination_text(self, doctor_fullname: str) -> bool:
         try:
             browser.all("div.NewStyleDoc > div.WrapDoc").element_by(
-                have.text(self.doctor.upper())
+                have.text(doctor_fullname.upper())
             ).with_(timeout=0.25).should(be.present)
         except Exception:
             return False
@@ -488,10 +497,10 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         ).click()
         wait_for_loading()
 
-    def set_emh_examination_text(self):
+    def set_emh_examination_text(self, doctor_fullname: str):
         self.__open_emh()
         self.__select_emh_case_disease()
-        if self.__exists_emh_examination_text():
+        if self.__exists_emh_examination_text(doctor_fullname):
             self.__close_emh()
             return False
         self.__click_emh_add_document()
@@ -499,3 +508,63 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.__set_emh_examination_text()
         self.__close_emh()
         return True
+
+    def __open_emh_examination_text(self, doctor_fullname: str):
+        browser.all("div.NewStyleDoc > div.WrapDoc").element_by(
+            have.text(doctor_fullname.upper())
+        ).element("span[title='Показать документ']").click()
+
+    def __get_emh_examination_block_text(self, field_name: str) -> str:
+        iframe = browser.element(
+            "div.NewStyleDoc div.WrapDoc div.freedoc_opened "
+            f"iframe[id^='{field_name}']"
+        )
+        iframe.wait.for_(be.present)
+        iframe_webelement = iframe.locate()
+        browser.driver.switch_to.frame(iframe_webelement)
+        element = browser.element("#tinymce > p")
+        try:
+            block_text = element.locate().get_attribute("innerText")
+        except Exception as e:
+            raise EcpAutoclickerException(
+                f"Ошибка: для пациента {self.ecp_patient_fullname} "
+                f"не удалось получить текст блока `{field_name}` "
+                "в ЭМК."
+            ) from e
+        browser.driver.switch_to.default_content()
+        return block_text.strip() if block_text else ""
+
+    def get_data_from_emh(self, doctor_fullname: str) -> FromEmhResults:
+        self.__open_emh()
+        self.__select_emh_case_disease()
+        if not self.__exists_emh_examination_text(doctor_fullname):
+            self.__close_emh()
+            return FromEmhResults.OTHER_DOCTOR
+        self.__open_emh_examination_text(doctor_fullname)
+        result_field_text = self.__get_emh_examination_block_text(
+            "field_autoname10"
+        )
+        intpatient_triggers = [
+            "показана госпитализация",
+            "план лечения",
+        ]
+        outpatient_triggers = [
+            "по месту жительства",
+            "амбулаторно",
+        ]
+        for trigger in intpatient_triggers:
+            if trigger.lower() in result_field_text.lower():
+                return FromEmhResults.INPATIENT
+        for trigger in outpatient_triggers:
+            if trigger.lower() in result_field_text.lower():
+                break
+        else:
+            return FromEmhResults.UNKNOWN_RESULT
+        self.doctor = doctor_fullname
+        self.anamnesis_morbi = self.__get_emh_examination_block_text(
+            "field_anamnesmorbi"
+        )
+        self.diagnosis = self.__get_emh_examination_block_text("field_diagnos")
+        self.result_status_number = 3  # OUTPATIENT
+        self.__close_emh()
+        return FromEmhResults.OUTPATIENT

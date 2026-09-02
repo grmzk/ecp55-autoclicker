@@ -18,7 +18,8 @@ def get_qinpatients_patients(
         f"Получение данных из БД QInPatients: 0 из {patients_amount}",
         end="\r",
     )
-    case_disease_list: list[CaseDisease] = []
+    case_disease_qinpatients_list: list[CaseDisease] = []
+    case_disease_noqinpatients_list: list[CaseDisease] = []
     patient_count = 0
     for case_disease in ecp_case_disease_list:
         examination = Examination.get_examination(
@@ -34,6 +35,7 @@ def get_qinpatients_patients(
             end="\r",
         )
         if not examination:
+            case_disease_noqinpatients_list.append(case_disease)
             continue
         case_disease.doctor = examination.doctor
         case_disease.diagnosis = examination.diagnosis
@@ -60,13 +62,13 @@ def get_qinpatients_patients(
         )
         case_disease.examination_text = examination.get_examination_text()
         case_disease.qinpatients_examination = examination
-        case_disease_list.append(case_disease)
+        case_disease_qinpatients_list.append(case_disease)
     print(
         "Получение данных из БД QInPatients: "
         f"{patient_count} из {patients_amount}",
     )
     print(
         "Всего пациентов, которые могут быть оформлены данными "
-        f"из БД QInPatients: {len(case_disease_list)}"
+        f"из БД QInPatients: {len(case_disease_qinpatients_list)}"
     )
-    return case_disease_list
+    return case_disease_qinpatients_list, case_disease_noqinpatients_list
