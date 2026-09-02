@@ -43,7 +43,10 @@ def get_doctor_fullname():
 
 
 def set_ecp_date(examination_date: datetime.date):
-    print("==================================================================")
+    print(
+        "=================================================="
+        "=================================================="
+    )
     print(f"ДАТА: {examination_date.strftime("%d.%m.%Y")}")
     print()
     element = browser.element(

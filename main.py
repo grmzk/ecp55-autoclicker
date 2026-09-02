@@ -9,8 +9,8 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE_FROM = datetime.date(2026, 8, 9)
-ECP_DATE_TO = datetime.date(2026, 8, 10)
+ECP_DATE_FROM = datetime.date(2026, 8, 12)
+ECP_DATE_TO = datetime.date(2026, 8, 15)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {
@@ -29,8 +29,9 @@ def main():
         "--user-data-dir=/home/miv-sisyphus/.config/chromium"
     )
     driver_options.add_argument("--profile-directory=Profile 1")
-    # driver_options.add_argument("--headless")
     driver_options.add_argument("--start-maximized")
+    driver_options.add_argument("--disable-popup-blocking")
+    # driver_options.add_argument("--headless")
     browser.config.driver_options = driver_options
     browser.open("/")
 

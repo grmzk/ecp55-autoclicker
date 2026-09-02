@@ -171,6 +171,9 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             "div.x-combo-list[style*='visibility: visible'] tr:first-child"
         ).click()
 
+    def __set_result_no_criminal_trauma(self):
+        browser.element("#EvnPS_IsUnlaw + input").click().type("0")
+
     def __set_result_trauma_type(self):
         if not self.trauma_type_number:
             return
@@ -254,6 +257,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.__double_click()
         self.__set_result_doctor()
         self.__set_result_diagnosis_code()
+        self.__set_result_no_criminal_trauma()
         self.__set_result_trauma_type()
         self.__set_result_reason_code()
         self.__set_result_status()
