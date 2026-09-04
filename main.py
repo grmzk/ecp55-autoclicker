@@ -11,8 +11,8 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE_FROM = datetime.date(2026, 1, 1)
-ECP_DATE_TO = datetime.date(2026, 1, 10)
+ECP_DATE_FROM = datetime.date(2026, 8, 2)
+ECP_DATE_TO = datetime.date(2026, 8, 2)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {
@@ -64,14 +64,14 @@ def main():
     args = parser.parse_args(sys.argv[1:])
     if args.sign:
         ecp_main_actions.login_head(HEAD_USERNAME)
+        head_fullname = ecp_main_actions.get_doctor_fullname()
         ecp_main_actions.set_workplace()
         for ordinal in range(
             ECP_DATE_FROM.toordinal(), ECP_DATE_TO.toordinal() + 1
         ):
             ecp_date = datetime.date.fromordinal(ordinal)
             ecp_main_actions.set_ecp_date(ecp_date)
-            input("Press Enter to exit...")
-            return
+            ecp_main_actions.sign_completed_cases(head_fullname)
     else:
         ecp_main_actions.login(
             credentials["username"], credentials["password"]

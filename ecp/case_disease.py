@@ -11,6 +11,9 @@ from qinpatients.examination import Examination
 
 SET_RESULT_CODE_LIST_TIMEOUT = 5
 OUTPATIENT_CARD_DIALOG_TIMEOUT = 1.5
+EMH_SIGN_ALERT_DIALOG_TIMEOUT = 5
+GET_STAFF_EXAMINATION_ELEMENT_OPERATOR_TIMEOUT = 10
+GET_STAFF_EXAMINATION_ELEMENT_TIMEOUT = 0.1
 
 DEFAULT_REASON_CODE = "X59.9"
 DEFAULT_DIAGNOSIS_CODE = "T14.9"
@@ -27,6 +30,13 @@ class FromEmhResults(Enum):
     INPATIENT = "ГОСПИТАЛИЗАЦИЯ (НЕ МОЖЕТ БЫТЬ ОФОРМЛЕН АВТОМАТИЧЕСКИ)"
     OUTPATIENT = "АМБУЛАТОРНОЕ ЛЕЧЕНИЕ (К ОФОРМЛЕНИЮ)"
     UNKNOWN_RESULT = "РЕЗУЛЬТАТ НЕИЗВЕСТЕН"
+
+
+class SignEmhResults(Enum):
+    NO_EXAMINATION = "НЕТ ОСМОТРА"
+    ALREADY_WAS_SIGNED = "УЖЕ БЫЛ ПОДПИСАН"
+    SIGNED = "ПОДПИСАН"
+    MISSING_PATIENT_DATA = "ОТСУТСТВУЮТ ДАННЫЕ (СНИЛС И Т.П.)"
 
 
 class CaseDisease:  # pylint: disable=too-many-instance-attributes
@@ -625,3 +635,124 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         self.result_status_number = 3  # OUTPATIENT
         self.__close_emh()
         return FromEmhResults.OUTPATIENT
+
+    def __get_staff_examination_element(self):
+        staff = [
+            "Букаев Андрей Федорович",
+            "Герк Александр Иосифович",
+            "Гребенюк Алексей Михайлович",
+            "Давкаев Марк Дмитриевич",
+            "Желудков Станислав Дмитриевич",
+            "Жильцов Сергей Георгиевич",
+            "Зиняков Сергей Валерьевич",
+            "Козарь Олег Константинович",
+            "Миргалиев Тагир Саретдинович",
+            "Музыкин Игорь Валерьевич",
+            "Павельев Петр Владимирович",
+            "Поздеев Максим Владимирович",
+            "Ромазанов Тимур Сакенович",
+            "Савченко Павел Анатольевич",
+            "Самсонов Константин Викторович",
+            "Федотов Александр Евгеньевич",
+            "Хамов Александр Иванович",
+            "Цыбренко Карина Сергеевна",
+            "Шуров Александр Владимирович",
+        ]
+        examination_element = None
+
+        try:
+            examination_element = (
+                browser.all("div.NewStyleDoc div.WrapDoc")
+                .element_by(have.text(self.ecp_operator.upper()))
+                .with_(timeout=GET_STAFF_EXAMINATION_ELEMENT_OPERATOR_TIMEOUT)
+                .should(be.present)
+            )
+        except Exception:
+            pass
+        else:
+            return examination_element
+
+        for member in staff:
+            try:
+                examination_element = (
+                    browser.all("div.NewStyleDoc div.WrapDoc")
+                    .element_by(have.text(member.upper()))
+                    .with_(timeout=GET_STAFF_EXAMINATION_ELEMENT_TIMEOUT)
+                    .should(be.present)
+                )
+            except Exception:
+                pass
+            else:
+                break
+        return examination_element
+
+    def __exists_emh_sign_alert_dialog(self):
+        try:
+            dialog = browser.element("div[role='alertdialog']")
+            dialog.with_(timeout=EMH_SIGN_ALERT_DIALOG_TIMEOUT).wait.for_(
+                be.present
+            )
+        except Exception:
+            return False
+        dialog.all("a").element_by(have.text("Понятно")).click()
+        return True
+
+    def __sign_emh(self, element: Element, head_fullname: str):
+        try:
+            element.element(
+                "a[data-qtip^='Документ подписан'][aria-hidden='false']"
+            ).should(be.present)
+        except Exception:
+            pass
+        else:
+            return SignEmhResults.ALREADY_WAS_SIGNED
+        element.hover().element(
+            "a[data-qtip^='Подписать документ'][aria-hidden='false']"
+        ).click()
+        input_role_element = browser.element(
+            "div[matomo_event_id='win_Podpisanie_dannih_EP'] "
+            "input[name='EMDPersonRole_id']"
+        )
+        input_role_element.wait.for_(have.value("Врач"))
+        input_role_element.type(
+            Keys.BACKSPACE * 4 + "Заведующий отделением"
+        ).press_enter()
+        input_member_element = browser.element(
+            "div[matomo_event_id='win_Podpisanie_dannih_EP'] "
+            "input[name='MedStaffFact_id']"
+        )
+        input_member_element.wait.for_(
+            have.value_containing(head_fullname.upper())
+        )
+        input_member_element.press_enter()
+        browser.element(
+            "div[matomo_event_id='win_Podpisanie_dannih_EP'] "
+            "a[matomo_event_id='win_Podpisanie_dannih_EP_tbr_btn_Podpisat']"
+        ).click()
+        if self.__exists_emh_sign_alert_dialog():
+            browser.element(
+                "div[matomo_event_id='win_Podpisanie_dannih_EP'] "
+                "a[matomo_event_id='win_Podpisanie_dannih_EP_tbr_btn_Otmena']"
+            ).click()
+            return SignEmhResults.MISSING_PATIENT_DATA
+        return SignEmhResults.SIGNED
+
+    def sign_emh(self, head_fullname: str):
+        self.__open_emh()
+        self.__select_emh_case_disease()
+        examination_element = self.__get_staff_examination_element()
+        if not examination_element:
+            self.__close_emh()
+            return SignEmhResults.NO_EXAMINATION
+        if (
+            self.__sign_emh(examination_element, head_fullname)
+            == SignEmhResults.MISSING_PATIENT_DATA
+        ):
+            self.__close_emh()
+            return SignEmhResults.MISSING_PATIENT_DATA
+        casedisease_element = browser.element(
+            "div.evn_visit_pl div.right div.emd-here"
+        )
+        result = self.__sign_emh(casedisease_element, head_fullname)
+        self.__close_emh()
+        return result

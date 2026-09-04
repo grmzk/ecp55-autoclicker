@@ -203,7 +203,6 @@ def get_patients_intact(doctor_fullname: str):
     patients_emh = get_patients_data_from_emh(
         patients_noqinpatients, doctor_fullname
     )
-    # patients_emh = []
     print()
     return patients_qinpatients + patients_emh
 
@@ -306,7 +305,7 @@ def perform_emh_examination_text(doctor_fullname: str):
             f"диагноз: {patient.ecp_diagnosis.split(". ", maxsplit=1)[0]}"
         )
         print(
-            f"{message_start:<80}" "::: в процессе добавления осмотра ...",
+            f"{message_start:<80}::: в процессе добавления осмотра ...",
             end="\r",
         )
         result = (
@@ -315,6 +314,38 @@ def perform_emh_examination_text(doctor_fullname: str):
             else "ОСМОТР УЖЕ БЫЛ ДОБАВЛЕН"
         )
         print(
-            f"{message_start:<80}" f"::: {result}                        ",
+            f"{message_start:<80}::: {result}                        ",
+        )
+    print()
+
+
+def get_patients_with_outpatient_card_number():
+    rows = get_main_tables_rows(MainTables.OUTPATIENTS)
+    case_disease_list: list[CaseDisease] = []
+    for element_row in rows:
+        case_disease = CaseDisease(element_row)
+        if not case_disease.ecp_outpatient_card_number:
+            continue
+        case_disease_list.append(case_disease)
+    print(f"Всего пациентов с амбулаторным номером: {len(case_disease_list)}")
+    return case_disease_list
+
+
+def sign_completed_cases(head_fullname: str):
+    print("ПОДПИСЬ АМБУЛАТОРНЫХ ИСТОРИЙ БОЛЕЗНИ")
+    patients = get_patients_with_outpatient_card_number()
+    for i, patient in enumerate(patients):
+        message_start = (
+            f"{i + 1:02d}. {patient.ecp_patient_fullname}, "
+            f"диагноз: {patient.ecp_diagnosis.split(". ", maxsplit=1)[0]}"
+        )
+        print(
+            f"{message_start:<80}::: в процессе подписывания ...",
+            end="\r",
+        )
+        from_emh_result = patient.sign_emh(head_fullname)
+        result = from_emh_result.value
+        print(
+            f"{message_start:<80}::: {result}                   ",
         )
     print()
