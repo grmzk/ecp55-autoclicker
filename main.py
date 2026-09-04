@@ -1,4 +1,6 @@
+import argparse
 import datetime
+import sys
 from os import getenv
 
 from dotenv import load_dotenv
@@ -19,6 +21,28 @@ credentials = {
 }
 
 
+def create_argparser():
+    parser = argparse.ArgumentParser(
+        prog="ecp55-autoclicker",
+        description="ecp55.is-mis.ru optimizer",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    group_build = parser.add_mutually_exclusive_group()
+    # group_build.add_argument(
+    #     "--build",
+    #     type=str,
+    #     metavar="<version>",
+    #     help="Building a python interpreter from source code. "
+    #     "Example: python-manager --build 3.10.13",
+    # )
+    group_build.add_argument(
+        "--sign",
+        action="store_true",
+        help="Sign of completed outpatient treatment cases",
+    )
+    return parser
+
+
 def main():
     browser.config.base_url = "https://ecp55.is-mis.ru"
     browser.config.window_width = 1920
@@ -34,6 +58,12 @@ def main():
     # driver_options.add_argument("--headless")
     browser.config.driver_options = driver_options
     browser.open("/")
+
+    parser = create_argparser()
+    args = parser.parse_args(sys.argv[1:])
+    if args.sign:
+        print("SIGN")
+        return
 
     ecp_main_actions.login(credentials["username"], credentials["password"])
     doctor_fullname = ecp_main_actions.get_doctor_fullname()
