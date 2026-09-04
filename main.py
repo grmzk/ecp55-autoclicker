@@ -20,6 +20,8 @@ credentials = {
     "password": getenv("PASSWORD", ""),
 }
 
+HEAD_USERNAME = getenv("HEAD_USERNAME", "")
+
 
 def create_argparser():
     parser = argparse.ArgumentParser(
@@ -54,7 +56,6 @@ def main():
     )
     driver_options.add_argument("--profile-directory=Profile 1")
     driver_options.add_argument("--start-maximized")
-    driver_options.add_argument("--disable-popup-blocking")
     # driver_options.add_argument("--headless")
     browser.config.driver_options = driver_options
     browser.open("/")
@@ -62,20 +63,29 @@ def main():
     parser = create_argparser()
     args = parser.parse_args(sys.argv[1:])
     if args.sign:
-        print("SIGN")
-        return
-
-    ecp_main_actions.login(credentials["username"], credentials["password"])
-    doctor_fullname = ecp_main_actions.get_doctor_fullname()
-    ecp_main_actions.set_workplace()
-    for ordinal in range(
-        ECP_DATE_FROM.toordinal(), ECP_DATE_TO.toordinal() + 1
-    ):
-        ecp_date = datetime.date.fromordinal(ordinal)
-        ecp_main_actions.set_ecp_date(ecp_date)
-        ecp_main_actions.perform_examinations_result(doctor_fullname)
-        ecp_main_actions.perform_outpatient_card_number(doctor_fullname)
-        ecp_main_actions.perform_emh_examination_text(doctor_fullname)
+        ecp_main_actions.login_head(HEAD_USERNAME)
+        ecp_main_actions.set_workplace()
+        for ordinal in range(
+            ECP_DATE_FROM.toordinal(), ECP_DATE_TO.toordinal() + 1
+        ):
+            ecp_date = datetime.date.fromordinal(ordinal)
+            ecp_main_actions.set_ecp_date(ecp_date)
+            input("Press Enter to exit...")
+            return
+    else:
+        ecp_main_actions.login(
+            credentials["username"], credentials["password"]
+        )
+        doctor_fullname = ecp_main_actions.get_doctor_fullname()
+        ecp_main_actions.set_workplace()
+        for ordinal in range(
+            ECP_DATE_FROM.toordinal(), ECP_DATE_TO.toordinal() + 1
+        ):
+            ecp_date = datetime.date.fromordinal(ordinal)
+            ecp_main_actions.set_ecp_date(ecp_date)
+            ecp_main_actions.perform_examinations_result(doctor_fullname)
+            ecp_main_actions.perform_outpatient_card_number(doctor_fullname)
+            ecp_main_actions.perform_emh_examination_text(doctor_fullname)
 
     input("Press Enter to exit...")
 

@@ -29,6 +29,19 @@ def login(username: str, password: str):
     wait_for_loading()
 
 
+def login_head(username: str):
+    browser.element("input[id='promed-login']").type(username)
+    browser.element(
+        "div.login-form > ul.select_login a[rel='token_auth']"
+    ).click()
+    browser.element("#promed-tokentype").click()
+    browser.element("#promed-tokentype > option[value='cc']").click()
+    browser.element("#CertListBox > option[value='0']").click()
+    browser.element("#card_auth_submit").click()
+    sleep(1)
+    wait_for_loading()
+
+
 def get_doctor_fullname():
     element = browser.element("span[class='x-window-header-text']")
     element.wait.for_(be.existing)
