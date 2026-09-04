@@ -9,8 +9,8 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE_FROM = datetime.date(2026, 8, 12)
-ECP_DATE_TO = datetime.date(2026, 8, 15)
+ECP_DATE_FROM = datetime.date(2026, 8, 27)
+ECP_DATE_TO = datetime.date(2026, 8, 31)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {

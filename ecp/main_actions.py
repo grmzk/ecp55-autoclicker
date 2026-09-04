@@ -44,8 +44,8 @@ def get_doctor_fullname():
 
 def set_ecp_date(examination_date: datetime.date):
     print(
-        "=================================================="
-        "=================================================="
+        "============================================================"
+        "============================================================"
     )
     print(f"ДАТА: {examination_date.strftime("%d.%m.%Y")}")
     print()
@@ -58,30 +58,24 @@ def set_ecp_date(examination_date: datetime.date):
     )
     element.press_enter()
     wait_for_loading()
-    try:
-        date_error_dlg = True
-        browser.element(".x-window-dlg").with_(
-            timeout=SET_DATE_ERROR_DLG_TIMEOUT
-        ).wait.for_(be.present)
-    # except TimeoutException:
+    # try:
+    #     date_error_dlg = True
+    #     browser.element(".x-window-dlg").with_(
+    #         timeout=SET_DATE_ERROR_DLG_TIMEOUT
+    #     ).wait.for_(be.present)
+    # except Exception:
+    #     # print(type(e).__name__)
     #     date_error_dlg = False
-    #     print("TimeoutException called!")
-    # except NoSuchElementException:
-    #     date_error_dlg = False
-    #     print("NoSuchElementException called!")
-    except Exception:
-        # print(type(e).__name__)
-        date_error_dlg = False
-    if date_error_dlg:
-        browser.element(".x-window-dlg button").click()
-    if element.locate().get_attribute("value") != examination_date.strftime(
-        "%d.%m.%Y"
-    ):
-        send_keys_one_by_one(
-            element, Keys.BACKSPACE * 8 + examination_date.strftime("%d%m%Y")
-        )
-        element.press_enter()
-        wait_for_loading()
+    # if date_error_dlg:
+    #     browser.element(".x-window-dlg button").click()
+    # if element.locate().get_attribute("value") != examination_date.strftime(
+    #     "%d.%m.%Y"
+    # ):
+    #     send_keys_one_by_one(
+    #         element, Keys.BACKSPACE * 8 + examination_date.strftime("%d%m%Y")
+    #     )
+    #     element.press_enter()
+    #     wait_for_loading()
 
 
 def set_workplace():

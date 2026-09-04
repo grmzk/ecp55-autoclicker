@@ -292,7 +292,9 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             if message_yes in dialog_message:
                 dialog.all("button").element_by(have.text("Да")).click()
                 return True
-        dialog_messages_no: list[str] = []
+        dialog_messages_no: list[str] = [
+            "отсутствует действующий полис ОМС",
+        ]
         for message_no in dialog_messages_no:
             if message_no in dialog_message:
                 dialog.all("button").element_by(have.text("Нет")).click()
