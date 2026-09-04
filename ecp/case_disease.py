@@ -22,6 +22,7 @@ DEFAULT_DIAGNOSIS_AMPUTATION_CODE = "T14.7"
 
 
 class FromEmhResults(Enum):
+    NO_EXAMINATION = "НЕТ ОСМОТРА"
     OTHER_DOCTOR = "ДРУГОЙ ВРАЧ"
     INPATIENT = "ГОСПИТАЛИЗАЦИЯ (НЕ МОЖЕТ БЫТЬ ОФОРМЛЕН АВТОМАТИЧЕСКИ)"
     OUTPATIENT = "АМБУЛАТОРНОЕ ЛЕЧЕНИЕ (К ОФОРМЛЕНИЮ)"
@@ -378,7 +379,22 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         ).click()
         wait_for_loading()
 
-    def __exists_emh_examination_text(self, doctor_fullname: str) -> bool:
+    def __exists_emh_examination_text(self, doctor_fullname: str):
+        """Checking for the presence of examinations in EMH.
+        Args:
+            doctor_fullname (str): doctor full name
+        Returns:
+            True: examination of `doctor_fullname` exists
+            False: examination of `doctor_fullname` not exists,
+                but examination of other doctors exists
+            None: there are no examinations
+        """
+        try:
+            browser.all("div.NewStyleDoc > div.WrapDoc").with_(
+                timeout=0.25
+            ).should(have.size_greater_than(0))
+        except Exception:
+            return None
         try:
             browser.all("div.NewStyleDoc > div.WrapDoc").element_by(
                 have.text(doctor_fullname.upper())
@@ -573,8 +589,13 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
     def get_data_from_emh(self, doctor_fullname: str) -> FromEmhResults:
         self.__open_emh()
         self.__select_emh_case_disease()
-        if not self.__exists_emh_examination_text(doctor_fullname):
+        exists_examination = self.__exists_emh_examination_text(
+            doctor_fullname
+        )
+        if not exists_examination:
             self.__close_emh()
+            if exists_examination is None:
+                return FromEmhResults.NO_EXAMINATION
             return FromEmhResults.OTHER_DOCTOR
         self.__open_emh_examination_text(doctor_fullname)
         result_field_text = self.__get_emh_examination_block_text(
