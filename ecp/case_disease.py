@@ -218,9 +218,12 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
             )
         browser.element("#EPSPEF_PriemLeavePanel").click()
         if self.result_status_number == 99:  # hospitalization
-            browser.element("#EPSPEF_LpuSectionCombo").click().type(
-                str(self.inpatient_department_code)
-            ).press_enter()
+            department_element = browser.element("#EPSPEF_LpuSectionCombo")
+            department_element.click()
+            send_keys_one_by_one(
+                department_element, str(self.inpatient_department_code)
+            )
+            department_element.press_enter()
             browser.element("#DiagSetPhase_pid + input").click().type(
                 str(self.condition_number)
             )
@@ -419,7 +422,7 @@ class CaseDisease:  # pylint: disable=too-many-instance-attributes
         ).hover()
         browser.element(
             "a.button[id^='EvnXmlProtokolList'][title='Добавить документ']"
-        ).click()
+        ).hover().click()
         browser.element("div.x-menu[style*='visibility: visible;']").all(
             "li a"
         ).element_by(have.text("Первичный осмотр при поступлении")).click()
