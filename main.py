@@ -11,8 +11,8 @@ from ecp import main_actions as ecp_main_actions
 
 load_dotenv()
 
-ECP_DATE_FROM = datetime.date(2026, 8, 2)
-ECP_DATE_TO = datetime.date(2026, 8, 2)
+ECP_DATE_FROM = datetime.date(2026, 9, 5)
+ECP_DATE_TO = datetime.date(2026, 9, 5)
 GLOBAL_BROWSER_TIMEOUT = 45
 
 credentials = {
@@ -21,6 +21,11 @@ credentials = {
 }
 
 HEAD_USERNAME = getenv("HEAD_USERNAME", "")
+
+CHROMIUM_CONFIG_DIR = getenv("CHROMIUM_CONFIG_DIR", "")
+CHROMIUM_PROFILE = getenv("CHROMIUM_PROFILE", "")
+BROWSER_WINDOW_WIDTH = int(getenv("BROWSER_WINDOW_WIDTH", "1920"))
+BROWSER_WINDOW_HEIGHT = int(getenv("BROWSER_WINDOW_HEIGHT", "900"))
 
 
 def create_argparser():
@@ -47,14 +52,12 @@ def create_argparser():
 
 def main():
     browser.config.base_url = "https://ecp55.is-mis.ru"
-    browser.config.window_width = 1920
-    browser.config.window_height = 900
+    browser.config.window_width = BROWSER_WINDOW_WIDTH
+    browser.config.window_height = BROWSER_WINDOW_HEIGHT
     browser.config.timeout = GLOBAL_BROWSER_TIMEOUT
     driver_options = webdriver.ChromeOptions()
-    driver_options.add_argument(
-        "--user-data-dir=/home/miv-sisyphus/.config/chromium"
-    )
-    driver_options.add_argument("--profile-directory=Profile 1")
+    driver_options.add_argument(f"--user-data-dir={CHROMIUM_CONFIG_DIR}")
+    driver_options.add_argument(f"--profile-directory={CHROMIUM_PROFILE}")
     driver_options.add_argument("--start-maximized")
     # driver_options.add_argument("--headless")
     browser.config.driver_options = driver_options

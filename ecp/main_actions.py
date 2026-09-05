@@ -179,23 +179,32 @@ def get_patients_intact(doctor_fullname: str):
             continue
         patients_intact_all.append(case_disease)
     print(f"Всего неоформленных пациентов: {len(patients_intact_all)}")
-    patients_qinpatients, patients_noqinpatients = get_qinpatients_patients(
-        patients_intact_all, doctor_fullname
+    patients_qinpatients_all, patients_noqinpatients = (
+        get_qinpatients_patients(patients_intact_all, doctor_fullname)
     )
-    for i, patient in enumerate(patients_qinpatients):
+    patients_qinpatients: list[CaseDisease] = []
+    for i, patient in enumerate(patients_qinpatients_all):
         if not patient.qinpatients_examination:
             raise EcpAutoclickerException(
                 f"Ошибка: для пациента {patient.ecp_patient_fullname} "
                 "из БД QInPatients возвращено пустое значение "
                 "`qinpatients_examination`"
             )
-        result_status = "ГОСПИТАЛИЗАЦИЯ"
         if patient.qinpatients_examination.result_status in [
             ResultStatus.OUTPATIENT,
             ResultStatus.SELF_EXIT,
             ResultStatus.SELF_REFUSE,
         ]:
             result_status = "АМБУЛАТОРНОЕ ЛЕЧЕНИЕ"
+            patients_qinpatients.append(patient)
+        elif (
+            patient.qinpatients_examination.result_status
+            == ResultStatus.UNCOMPLETED
+        ):
+            result_status = "ОСМОТР НЕ ЗАВЕРШЕН"
+        else:
+            result_status = "ГОСПИТАЛИЗАЦИЯ"
+            patients_qinpatients.append(patient)
         message_start = f"{i + 1:02d}. {patient.ecp_patient_fullname}"
         print(
             f"{message_start:<80}::: {result_status}",
